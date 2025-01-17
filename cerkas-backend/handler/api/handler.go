@@ -20,12 +20,14 @@ type HTTPHandler interface {
 type httpHandler struct {
 	cfg       config.Config
 	catalogUc module.CatalogUsecase
+	viewUc    module.ViewUsecase
 }
 
-func NewHTTPHandler(cfg config.Config, catalogUc module.CatalogUsecase) HTTPHandler {
+func NewHTTPHandler(cfg config.Config, catalogUc module.CatalogUsecase, viewUc module.ViewUsecase) HTTPHandler {
 	return &httpHandler{
 		cfg:       cfg,
 		catalogUc: catalogUc,
+		viewUc:    viewUc,
 	}
 }
 

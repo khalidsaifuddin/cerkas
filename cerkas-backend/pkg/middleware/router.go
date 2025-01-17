@@ -9,6 +9,7 @@ import (
 	"github.com/cerkas/cerkas-backend/handler/api"
 	"github.com/cerkas/cerkas-backend/pkg/conn"
 	catalogrepository "github.com/cerkas/cerkas-backend/repository/catalog_repository"
+	viewrepository "github.com/cerkas/cerkas-backend/repository/view_repository"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -26,12 +27,14 @@ func InitRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, conn.CacheService)
 
 	// repository
 	catalogRepo := catalogrepository.New(cfg, db)
+	viewRepo := viewrepository.New(db, cfg)
 
 	// usecase
 	catalogUc := module.NewCatalogUsecase(cfg, catalogRepo)
+	viewUc := module.NewViewUsecase(cfg, catalogRepo, viewRepo)
 
 	// handler
-	httpHandler := api.NewHTTPHandler(cfg, catalogUc)
+	httpHandler := api.NewHTTPHandler(cfg, catalogUc, viewUc)
 
 	router.POST("t/:tenant_code/p/:product_code/o/:object_code/data", httpHandler.GetObjectData)
 	router.POST("t/:tenant_code/p/:product_code/o/:object_code/data/raw", httpHandler.GetDataByRawQuery)
