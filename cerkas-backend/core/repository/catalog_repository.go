@@ -7,6 +7,7 @@ import (
 )
 
 type CatalogRepository interface {
+	GetColumnList(ctx context.Context, request entity.CatalogQuery) (columns []map[string]interface{}, columnStrings string, err error)
 	GetObjectData(ctx context.Context, request entity.CatalogQuery) (resp entity.CatalogResponse, err error)
 	GetObjectDetail(ctx context.Context, request entity.CatalogQuery) (resp map[string]entity.DataItem, err error)
 	GetDataByRawQuery(ctx context.Context, request entity.CatalogQuery) (resp entity.CatalogResponse, err error)

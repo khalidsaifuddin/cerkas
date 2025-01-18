@@ -2,7 +2,6 @@ package catalogrepository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/cerkas/cerkas-backend/core/entity"
 	repository_intf "github.com/cerkas/cerkas-backend/core/repository"
 	"github.com/cerkas/cerkas-backend/pkg/helper"
+	"github.com/cerkas/cerkas-backend/repository/util"
 	"gorm.io/gorm"
 )
 
@@ -62,6 +62,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 		column[entity.FieldDataType] = dataType.(string)
 		column[entity.FieldColumnCode] = fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, columnCode.(string))
 		column[entity.FieldColumnName] = columnCode.(string)
+		column[entity.FieldOriginalColumnCode] = columnCode.(string)
 
 		if foreignTableName != nil && foreignTableName.(string) != request.ObjectCode && foreignColumnName != nil && foreignColumnName.(string) != "id" {
 			column[entity.FieldForeignTableName] = foreignTableName.(string)
@@ -83,7 +84,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 				for _, column := range columns {
 					if completeFieldName == column[entity.FieldColumnCode] {
 						isFound = true
-						column["original_column_code"] = fieldNameKey
+						column[entity.FieldOriginalColumnCode] = fieldNameKey
 
 						filteredColumns = append(filteredColumns, column)
 					}
@@ -116,11 +117,11 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 				}
 
 				filteredColumns = append(filteredColumns, map[string]interface{}{
-					"original_column_code":        fieldNameKey,
-					entity.FieldColumnCode:        fieldCode,
-					entity.FieldColumnName:        fieldName,
-					entity.FieldForeignColumnName: foreignColumnName,
-					entity.FieldDataType:          "text",
+					entity.FieldOriginalColumnCode: fieldNameKey,
+					entity.FieldColumnCode:         fieldCode,
+					entity.FieldColumnName:         fieldName,
+					entity.FieldForeignColumnName:  foreignColumnName,
+					entity.FieldDataType:           "text",
 					entity.ForeignTable: map[string]string{
 						entity.FieldForeignTableName:      foreignTableName,
 						entity.FieldForeignColumnName:     referenceColumnName,
@@ -182,7 +183,7 @@ func (r *repository) GetObjectData(ctx context.Context, request entity.CatalogQu
 	defer rows.Close()
 
 	for rows.Next() {
-		item, err := handleSingleRow(columnsList, rows, request)
+		item, err := util.HandleSingleRow(columnsList, rows, request)
 		if err != nil {
 			return resp, err
 		}
@@ -216,7 +217,7 @@ func (r *repository) GetObjectDetail(ctx context.Context, request entity.Catalog
 	}
 
 	for rows.Next() {
-		item, err := handleSingleRow(columnsList, rows, request)
+		item, err := util.HandleSingleRow(columnsList, rows, request)
 		if err != nil {
 			return resp, err
 		}
@@ -312,43 +313,6 @@ func (r *repository) UpdateObjectData(ctx context.Context, request entity.DataMu
 
 func (r *repository) DeleteObjectData(ctx context.Context, request entity.DataMutationRequest) (err error) {
 	return nil
-}
-
-func handleSingleRow(columnsList []map[string]interface{}, rows *sql.Rows, request entity.CatalogQuery) (item map[string]entity.DataItem, err error) {
-	// Create a slice of interface{} to hold column values
-	values := make([]interface{}, len(columnsList))
-	valuePointers := make([]interface{}, len(columnsList))
-	for i := range values {
-		valuePointers[i] = &values[i]
-	}
-
-	// Scan the row
-	if err := rows.Scan(valuePointers...); err != nil {
-		return item, err
-	}
-
-	// Create a map for the row
-	item = make(map[string]entity.DataItem)
-	for i, colName := range columnsList {
-		val := values[i]
-
-		// TODO: implement dynamic data type so it will not retun literally from db datatype
-
-		fieldName := colName[entity.FieldColumnCode].(string)
-		if val, ok := request.Fields[colName["original_column_code"].(string)]; ok && val.FieldName != "" {
-			fieldName = val.FieldName
-		}
-
-		item[colName["original_column_code"].(string)] = entity.DataItem{
-			FieldCode:    colName[entity.FieldColumnCode].(string),
-			FieldName:    fieldName,
-			DataType:     colName[entity.FieldDataType].(string),
-			Value:        val,
-			DisplayValue: val,
-		}
-	}
-
-	return item, nil
 }
 
 func isOperatorInLIKEList(operator entity.FilterOperator) bool {

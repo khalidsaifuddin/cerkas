@@ -15,6 +15,7 @@ type HTTPHandler interface {
 	GetObjectData(c *gin.Context)
 	GetObjectDetail(c *gin.Context)
 	GetDataByRawQuery(c *gin.Context)
+	GetContentLayoutByKeys(c *gin.Context)
 }
 
 type httpHandler struct {
@@ -128,6 +129,31 @@ func (h *httpHandler) GetDataByRawQuery(c *gin.Context) {
 	}
 
 	response, err := h.catalogUc.GetDataByRawQuery(c, request)
+	if err != nil {
+		statusCode = http.StatusInternalServerError
+		statusMessage = err.Error()
+
+		log.Println(statusMessage)
+		helper.ResponseOutput(c, int32(statusCode), statusMessage, nil)
+		return
+	}
+
+	helper.ResponseOutput(c, int32(statusCode), statusMessage, response)
+}
+
+func (h *httpHandler) GetContentLayoutByKeys(c *gin.Context) {
+	var statusCode int32 = entity.DefaultSucessCode
+	var statusMessage string = entity.DefaultSuccessMessage
+
+	request := entity.GetViewContentByKeysRequest{}
+
+	request.TenantCode = c.Param("tenant_code")
+	request.ProductCode = c.Param("product_code")
+	request.ObjectCode = c.Param("object_code")
+	request.ViewContentCode = c.Param("view_content_code")
+	request.LayoutType = c.Param("layout_type")
+
+	response, err := h.viewUc.GetContentLayoutByKeys(c, request)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
 		statusMessage = err.Error()

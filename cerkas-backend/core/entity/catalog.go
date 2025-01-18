@@ -6,6 +6,13 @@ type FilterGroupOperator string
 type FilterOperator string
 
 const (
+	PUBLIC             = "public"
+	PRODUCT_CODE       = "product_code"
+	TENANT_CODE        = "tenant_code"
+	OBJECT_CODE        = "object_code"
+	VIEW_SCHEMA_SERIAL = "view_schema_serial"
+	VIEW_LAYOUT_SERIAL = "view_layout_serial"
+
 	FilterOperatorAnd FilterGroupOperator = "AND"
 	FilterOperatorOr  FilterGroupOperator = "OR"
 
@@ -23,6 +30,7 @@ const (
 	FieldColumnCode            = "column_code"
 	FieldForeignTableName      = "foreign_table_name"
 	FieldForeignColumnName     = "foreign_column_name"
+	FieldOriginalColumnCode    = "original_column_code"
 	ForeignTable               = "foreign_table"
 	ForeignReferenceColumnName = "foreign_reference_column_name"
 )
