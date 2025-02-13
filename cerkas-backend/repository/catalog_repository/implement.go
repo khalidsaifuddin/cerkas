@@ -2,6 +2,7 @@ package catalogrepository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -304,10 +305,58 @@ func (r *repository) GetDataByRawQuery(ctx context.Context, request entity.Catal
 }
 
 func (r *repository) CreateObjectData(ctx context.Context, request entity.DataMutationRequest) (resp entity.CatalogResponse, err error) {
+	// INSERT INTO table_name (column1, column2, column3, ...)
+	// VALUES (value1, value2, value3, ...);
+
+	// get list of column from request.ObjectCode
+	completeTableName := request.TenantCode + "." + request.ObjectCode
+
+	// loop through data items and get the values
+	var columnCodeString string
+	var valueString string
+	for _, item := range request.Items {
+		columnCodeString = columnCodeString + ", " + item.FieldCode
+
+		if item.Value == nil {
+			valueString = valueString + ", NULL"
+		} else {
+			switch item.DataType {
+			case "text":
+				valueString = valueString + fmt.Sprintf(", '%v'", item.Value)
+			case "integer":
+				valueString = valueString + fmt.Sprintf(", %v", item.Value)
+			case "boolean":
+				valueString = valueString + fmt.Sprintf(", %v", item.Value)
+			default:
+				valueString = valueString + fmt.Sprintf(", '%v'", item.Value)
+			}
+		}
+	}
+
+	if len(valueString) == 0 {
+		return resp, errors.New("no data item found")
+	}
+
+	columnCodeString = columnCodeString[2:]
+	valueString = valueString[2:]
+
+	// insert into query string
+	insertQuery := fmt.Sprintf("INSERT INTO %v (%v) VALUES (%v)", completeTableName, columnCodeString, valueString)
+	log.Printf("insertQuery: %v", insertQuery)
+
+	// execute insert query
+	if err := r.db.Exec(insertQuery).Error; err != nil {
+		return resp, err
+	}
+
 	return resp, nil
 }
 
 func (r *repository) UpdateObjectData(ctx context.Context, request entity.DataMutationRequest) (resp entity.CatalogResponse, err error) {
+	// UPDATE table_name
+	// SET column1 = value1, column2 = value2, ...
+	// WHERE condition;
+
 	return resp, nil
 }
 
@@ -376,9 +425,13 @@ func getSingleData(columnList []map[string]interface{}, columnsString, tableName
 	query = query + fmt.Sprintf(" WHERE %v.deleted_at IS NULL", tableName)
 
 	// apply serial to get single data
-	query = query + fmt.Sprintf(" AND %v.serial = '%v'", tableName, request.Serial)
+	identifierColumn := "serial"
+	if !helper.IsUUID(request.Serial) {
+		identifierColumn = "code"
+	}
 
-	log.Print(query)
+	query = query + fmt.Sprintf(" AND %v.%v = '%v'", tableName, identifierColumn, request.Serial)
+
 	return query
 }
 
@@ -414,6 +467,7 @@ func getDataWithPagination(columnList []map[string]interface{}, columnsString, t
 	// Apply pagination (LIMIT and OFFSET)
 	query = fmt.Sprintf("%s LIMIT %d OFFSET %d", query, request.PageSize, (request.Page-1)*request.PageSize)
 	log.Print(query)
+
 	return query
 }
 

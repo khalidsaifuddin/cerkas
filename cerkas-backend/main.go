@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/cerkas/cerkas-backend/config"
+	"github.com/cerkas/cerkas-backend/handler/middleware"
 	"github.com/cerkas/cerkas-backend/pkg/conn"
-	"github.com/cerkas/cerkas-backend/pkg/middleware"
 )
 
 func main() {

@@ -1,7 +1,5 @@
 package entity
 
-import "time"
-
 type FilterGroupOperator string
 type FilterOperator string
 
@@ -54,14 +52,14 @@ var (
 )
 
 type Tenants struct {
-	ID        int       `json:"id"`
-	Serial    string    `json:"serial"`
-	Code      string    `json:"code"`
-	Name      string    `json:"name"`
-	CreatedBy string    `json:"created_by"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedBy string    `json:"updated_by"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID     int    `json:"id"`
+	Serial string `json:"serial"`
+	Code   string `json:"code"`
+	Name   string `json:"name"`
+	// CreatedBy string    `json:"created_by"`
+	// CreatedAt time.Time `json:"created_at"`
+	// UpdatedBy string    `json:"updated_by"`
+	// UpdatedAt time.Time `json:"updated_at"`
 }
 
 type DataSource struct {
@@ -77,35 +75,35 @@ type DataSource struct {
 	DBName      string                 `json:"db_name"`
 	Configs     map[string]interface{} `json:"configs"`
 	Tenant      Tenants                `json:"tenant"`
-	CreatedBy   string                 `json:"created_by"`
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedBy   string                 `json:"updated_by"`
-	UpdatedAt   time.Time              `json:"updated_at"`
+	// CreatedBy   string                 `json:"created_by"`
+	// CreatedAt   time.Time              `json:"created_at"`
+	// UpdatedBy   string                 `json:"updated_by"`
+	// UpdatedAt   time.Time              `json:"updated_at"`
 }
 
 type Modules struct {
-	ID                 int       `json:"id"`
-	Serial             string    `json:"serial"`
-	Code               string    `json:"code"`
-	Name               string    `json:"name"`
-	ParentModuleSerial string    `json:"parent_module_serial"`
-	Version            string    `json:"version"`
-	CreatedBy          string    `json:"created_by"`
-	CreatedAt          time.Time `json:"created_at"`
-	UpdatedBy          string    `json:"updated_by"`
-	UpdatedAt          time.Time `json:"updated_at"`
+	ID                 int    `json:"id"`
+	Serial             string `json:"serial"`
+	Code               string `json:"code"`
+	Name               string `json:"name"`
+	ParentModuleSerial string `json:"parent_module_serial"`
+	Version            string `json:"version"`
+	// CreatedBy          string    `json:"created_by"`
+	// CreatedAt          time.Time `json:"created_at"`
+	// UpdatedBy          string    `json:"updated_by"`
+	// UpdatedAt          time.Time `json:"updated_at"`
 }
 
 type Products struct {
-	ID        int       `json:"id"`
-	Serial    string    `json:"serial"`
-	Code      string    `json:"code"`
-	Name      string    `json:"name"`
-	IconURL   string    `json:"icon_url"`
-	CreatedBy string    `json:"created_by"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedBy string    `json:"updated_by"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID      int    `json:"id"`
+	Serial  string `json:"serial"`
+	Code    string `json:"code"`
+	Name    string `json:"name"`
+	IconURL string `json:"icon_url"`
+	// CreatedBy string    `json:"created_by"`
+	// CreatedAt time.Time `json:"created_at"`
+	// UpdatedBy string    `json:"updated_by"`
+	// UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Objects struct {
@@ -118,10 +116,10 @@ type Objects struct {
 	Description string     `json:"description"`
 	ObjectType  string     `json:"object_type"`
 	DataSource  DataSource `json:"data_source"`
-	CreatedBy   string     `json:"created_by"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedBy   string     `json:"updated_by"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	// CreatedBy   string     `json:"created_by"`
+	// CreatedAt   time.Time  `json:"created_at"`
+	// UpdatedBy   string     `json:"updated_by"`
+	// UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 type ObjectFields struct {
@@ -140,10 +138,10 @@ type ObjectFields struct {
 	Relation                string                 `json:"relation"`
 	IsSystem                bool                   `json:"is_system"`
 	DefaultValue            string                 `json:"default_value"`
-	CreatedBy               string                 `json:"created_by"`
-	CreatedAt               time.Time              `json:"created_at"`
-	UpdatedBy               string                 `json:"updated_by"`
-	UpdatedAt               time.Time              `json:"updated_at"`
+	// CreatedBy               string                 `json:"created_by"`
+	// CreatedAt               time.Time              `json:"created_at"`
+	// UpdatedBy               string                 `json:"updated_by"`
+	// UpdatedAt               time.Time              `json:"updated_at"`
 }
 
 type DataType struct {
@@ -216,4 +214,5 @@ type DataMutationRequest struct {
 	ObjectCode  string     `json:"object_code"`
 	TenantCode  string     `json:"tenant_code"`
 	ProductCode string     `json:"product_code"`
+	UserSerial  string     `json:"user_serial"`
 }

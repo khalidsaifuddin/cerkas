@@ -9,22 +9,22 @@ type GetViewContentByKeysRequest struct {
 }
 
 type ViewLayout struct {
-	Serial       string                 `json:"serial"`
-	Code         string                 `json:"code"`
-	LayoutConfig map[string]interface{} `json:"layout_config"`
+	Serial       string `json:"serial"`
+	Code         string `json:"code"`
+	LayoutConfig string `json:"layout_config"`
 }
 
 type ViewSchema struct {
-	Serial        string                 `json:"serial"`
-	Code          string                 `json:"code"`
-	Name          string                 `json:"name"`
-	Query         map[string]interface{} `json:"query"`
-	DisplayField  []interface{}          `json:"display_field"`
-	StructureType string                 `json:"structure_type"`
-	ActionSerial  string                 `json:"action_serial"`
-	IsFavorite    bool                   `json:"is_favorite"`
-	ObjectSerial  string                 `json:"object_serial"`
-	FieldSections map[string]interface{} `json:"field_sections"`
+	Serial        string `json:"serial"`
+	Code          string `json:"code"`
+	Name          string `json:"name"`
+	Query         string `json:"query"`
+	DisplayField  string `json:"display_field"`
+	StructureType string `json:"structure_type"`
+	ActionSerial  string `json:"action_serial"`
+	IsFavorite    bool   `json:"is_favorite"`
+	ObjectSerial  string `json:"object_serial"`
+	FieldSections string `json:"field_sections"`
 }
 
 type ViewContent struct {

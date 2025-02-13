@@ -40,12 +40,17 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 	}
 
 	// tenant record
-	if viewContentRecord[entity.TENANT_CODE].Value != nil {
+	if viewContentRecord[entity.TENANT_CODE].Value != nil || request.TenantCode != "" {
 		tenantSt := entity.Tenants{}
 
-		if ok := viewContentRecord[entity.TENANT_CODE].Value.(string); ok != "" {
+		tenantCode := viewContentRecord[entity.TENANT_CODE].Value
+		if tenantCode == nil {
+			tenantCode = request.TenantCode
+		}
+
+		if tenantCode != "" {
 			tenantRecord, err := uc.catalogRepo.GetObjectDetail(ctx, entity.CatalogQuery{
-				Serial:     viewContentRecord[entity.TENANT_CODE].Value.(string),
+				Serial:     tenantCode.(string),
 				ObjectCode: "tenants",
 				TenantCode: entity.PUBLIC,
 			})
@@ -63,12 +68,17 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 	}
 
 	// object record
-	if viewContentRecord[entity.OBJECT_CODE].Value != nil {
+	if viewContentRecord[entity.OBJECT_CODE].Value != nil || request.ObjectCode != "" {
 		objectSt := entity.Objects{}
 
-		if ok := viewContentRecord[entity.OBJECT_CODE].Value.(string); ok != "" {
+		objectCode := viewContentRecord[entity.OBJECT_CODE].Value
+		if objectCode == nil {
+			objectCode = request.ObjectCode
+		}
+
+		if objectCode != "" {
 			objectRecord, err := uc.catalogRepo.GetObjectDetail(ctx, entity.CatalogQuery{
-				Serial:     viewContentRecord[entity.OBJECT_CODE].Value.(string),
+				Serial:     objectCode.(string),
 				ObjectCode: "objects",
 				TenantCode: entity.PUBLIC,
 			})
@@ -85,12 +95,17 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 	}
 
 	// product
-	if viewContentRecord[entity.PRODUCT_CODE].Value != nil {
+	if viewContentRecord[entity.PRODUCT_CODE].Value != nil || request.ProductCode != "" {
 		productSt := entity.Products{}
 
-		if ok := viewContentRecord[entity.PRODUCT_CODE].Value.(string); ok != "" {
+		productCode := viewContentRecord[entity.PRODUCT_CODE].Value
+		if productCode == nil {
+			productCode = request.ProductCode
+		}
+
+		if productCode != "" {
 			objectRecord, err := uc.catalogRepo.GetObjectDetail(ctx, entity.CatalogQuery{
-				Serial:     viewContentRecord[entity.PRODUCT_CODE].Value.(string),
+				Serial:     productCode.(string),
 				ObjectCode: "products",
 				TenantCode: entity.PUBLIC,
 			})
