@@ -123,21 +123,21 @@ type Objects struct {
 }
 
 type ObjectFields struct {
-	ID                      int                    `json:"id"`
-	Serial                  string                 `json:"serial"`
-	Object                  Objects                `json:"object"`
-	FieldCode               string                 `json:"field_code"`
-	IsDisplayName           bool                   `json:"is_display_name"`
-	DisplayName             string                 `json:"display_name"`
-	FieldReference          string                 `json:"field_reference"`
-	Description             string                 `json:"description"`
-	DataType                DataType               `json:"data_type"`
-	ValidationRules         map[string]interface{} `json:"validation_rules"`
-	TargetObject            Objects                `json:"target_object_serial"`
-	TargetObjectFieldSerial string                 `json:"target_object_field_serial"`
-	Relation                string                 `json:"relation"`
-	IsSystem                bool                   `json:"is_system"`
-	DefaultValue            string                 `json:"default_value"`
+	ID                int                    `json:"id"`
+	Serial            string                 `json:"serial"`
+	Object            Objects                `json:"object"`
+	FieldCode         string                 `json:"field_code"`
+	IsDisplayName     bool                   `json:"is_display_name"`
+	DisplayName       string                 `json:"display_name"`
+	FieldReference    string                 `json:"field_reference"`
+	Description       string                 `json:"description"`
+	DataType          DataType               `json:"data_type"`
+	ValidationRules   map[string]interface{} `json:"validation_rules"`
+	TargetObject      Objects                `json:"target_object"`
+	TargetObjectField map[string]interface{} `json:"target_object_field"`
+	Relation          string                 `json:"relation"`
+	IsSystem          bool                   `json:"is_system"`
+	DefaultValue      string                 `json:"default_value"`
 	// CreatedBy               string                 `json:"created_by"`
 	// CreatedAt               time.Time              `json:"created_at"`
 	// UpdatedBy               string                 `json:"updated_by"`
@@ -180,24 +180,28 @@ type Field struct {
 }
 
 type CatalogQuery struct {
-	Fields      map[string]Field `json:"fields"`
-	Filters     []FilterGroup    `json:"filters"`
-	Orders      []Order          `json:"orders"`
-	Page        int              `json:"page"`
-	PageSize    int              `json:"page_size"`
-	Serial      string           `json:"serial"`
-	ObjectCode  string           `json:"object_code"`
-	TenantCode  string           `json:"tenant_code"`
-	ProductCode string           `json:"product_code"`
-	RawQuery    string           `json:"raw_query"`
+	Fields        map[string]Field `json:"fields"`
+	Filters       []FilterGroup    `json:"filters"`
+	Orders        []Order          `json:"orders"`
+	Page          int              `json:"page"`
+	PageSize      int              `json:"page_size"`
+	Serial        string           `json:"serial"`
+	ObjectCode    string           `json:"object_code"`
+	ObjectSerial  string           `json:"object_serial"`
+	TenantCode    string           `json:"tenant_code"`
+	TenantSerial  string           `json:"tenant_serial"`
+	ProductCode   string           `json:"product_code"`
+	ProductSerial string           `json:"product_serial"`
+	RawQuery      string           `json:"raw_query"`
 }
 
 type DataItem struct {
-	FieldCode    string      `json:"field_code"`
-	FieldName    string      `json:"field_name"`
-	DataType     string      `json:"data_type"`
-	Value        interface{} `json:"value"`
-	DisplayValue interface{} `json:"display_value"`
+	CompleteFieldCode string      `json:"complete_field_code"`
+	FieldCode         string      `json:"field_code"`
+	FieldName         string      `json:"field_name"`
+	DataType          string      `json:"data_type"`
+	Value             interface{} `json:"value"`
+	DisplayValue      interface{} `json:"display_value"`
 }
 
 type CatalogResponse struct {

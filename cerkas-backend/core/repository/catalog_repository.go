@@ -14,4 +14,8 @@ type CatalogRepository interface {
 	CreateObjectData(ctx context.Context, request entity.DataMutationRequest) (resp entity.CatalogResponse, err error)
 	UpdateObjectData(ctx context.Context, request entity.DataMutationRequest) (resp entity.CatalogResponse, err error)
 	DeleteObjectData(ctx context.Context, request entity.DataMutationRequest) (err error)
+	GetObjectFieldsByObjectCode(ctx context.Context, request entity.CatalogQuery) (resp map[string]any, err error)
+	GetObjectByCode(ctx context.Context, objectCode, tenantCode string) (resp entity.Objects, err error)
+	GetDataTypeBySerial(ctx context.Context, serial string) (resp entity.DataType, err error)
+	GetDataTypeBySerials(ctx context.Context, serials []string) (resp []entity.DataType, err error)
 }

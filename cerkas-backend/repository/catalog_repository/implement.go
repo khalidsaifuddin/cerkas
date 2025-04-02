@@ -373,6 +373,80 @@ func isOperatorInLIKEList(operator entity.FilterOperator) bool {
 	return false
 }
 
+func (r *repository) GetObjectByCode(ctx context.Context, objectCode, tenantCode string) (resp entity.Objects, err error) {
+	db := r.db.Model(&Objects{})
+	db.Joins("JOIN tenants ON tenants.serial = objects.tenant_serial")
+	db.Where("objects.code = ?", objectCode)
+	db.Where("tenants.code = ?", tenantCode)
+
+	result := Objects{}
+	if err := db.First(&result).Error; err != nil {
+		return resp, err
+	}
+
+	return result.ToEntity(), nil
+}
+
+func (r *repository) GetObjectFieldsByObjectCode(ctx context.Context, request entity.CatalogQuery) (resp map[string]any, err error) {
+	// get list of column from request.ObjectCode
+	resp = make(map[string]any)
+
+	db := r.db.Model(&ObjectFields{})
+
+	if r.cfg.IsDebugMode {
+		db = db.Debug()
+	}
+
+	results := []ObjectFields{}
+	if err := db.Where("object_serial = ?", request.ObjectSerial).Find(&results).Error; err != nil {
+		return resp, err
+	}
+
+	// iterate over the result to get value of column_name and data_type
+	for _, result := range results {
+		resp[result.FieldCode] = result.ToEntity()
+	}
+
+	return resp, nil
+}
+
+func (r *repository) GetDataTypeBySerial(ctx context.Context, serial string) (resp entity.DataType, err error) {
+	db := r.db.Model(&DataType{})
+	db.Where("serial = ?", serial)
+
+	result := DataType{}
+	if err := db.First(&result).Error; err != nil {
+		return resp, err
+	}
+
+	return result.ToEntity(), nil
+}
+
+func (r *repository) GetDataTypeBySerials(ctx context.Context, serials []string) (resp []entity.DataType, err error) {
+	if len(serials) == 0 {
+		return resp, nil // Return an empty response if no serials are provided
+	}
+
+	db := r.db.Model(&DataType{})
+
+	if r.cfg.IsDebugMode {
+		db = db.Debug()
+	}
+
+	var results []DataType
+	if err := db.Where("serial IN ?", serials).Find(&results).Error; err != nil {
+		return resp, fmt.Errorf("failed to fetch data types: %w", err)
+	}
+
+	for _, result := range results {
+		resp = append(resp, result.ToEntity())
+	}
+
+	return resp, nil
+}
+
+// local function
+
 // Helper function to build dynamic filters based on CatalogQuery
 func buildFilters(filters []entity.FilterGroup) string {
 	var filterClauses []string

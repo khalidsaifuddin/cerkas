@@ -1,10 +1,12 @@
 package catalogrepository
 
 import (
+	"encoding/json"
 	"time"
 
 	"database/sql"
 
+	"github.com/cerkas/cerkas-backend/core/entity"
 	"gorm.io/gorm"
 )
 
@@ -90,6 +92,20 @@ type Objects struct {
 	DeletedAt        gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
+func (o *Objects) ToEntity() entity.Objects {
+	return entity.Objects{
+		ID:          o.ID,
+		Serial:      o.Serial,
+		Tenant:      entity.Tenants{Serial: o.TenantSerial},
+		Module:      entity.Modules{Serial: o.ModuleSerial},
+		Code:        o.Code,
+		DisplayName: o.DisplayName,
+		Description: o.Description,
+		ObjectType:  o.ObjectType,
+		DataSource:  entity.DataSource{Serial: o.DataSourceSerial},
+	}
+}
+
 type ObjectFields struct {
 	ID                      int            `gorm:"column:id" json:"id"`
 	Serial                  string         `gorm:"column:serial" json:"serial"`
@@ -113,16 +129,76 @@ type ObjectFields struct {
 	DeletedAt               gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
+func (of *ObjectFields) TableName() string {
+	return "object_fields"
+}
+
+func (of *ObjectFields) ToEntity() entity.ObjectFields {
+	// convert validation rules from string to map
+	validationRules := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(of.ValidationRules), &validationRules); err != nil {
+		validationRules = nil
+	}
+
+	return entity.ObjectFields{
+		ID:                of.ID,
+		Serial:            of.Serial,
+		Object:            entity.Objects{Serial: of.ObjectSerial},
+		FieldCode:         of.FieldCode,
+		IsDisplayName:     of.IsDisplayName,
+		DisplayName:       of.DisplayName,
+		FieldReference:    of.FieldReference,
+		Description:       of.Description,
+		DataType:          entity.DataType{Serial: of.DataTypeSerial},
+		ValidationRules:   validationRules,
+		TargetObject:      entity.Objects{Serial: of.TargetObjectSerial},
+		TargetObjectField: map[string]interface{}{"serial": of.TargetObjectFieldSerial},
+		Relation:          of.Relation,
+		IsSystem:          of.IsSystem,
+	}
+}
+
 type DataType struct {
-	ID                int                    `gorm:"column:id" json:"id"`
-	Serial            string                 `gorm:"column:serial" json:"serial"`
-	Code              string                 `gorm:"column:code" json:"code"`
-	Name              string                 `gorm:"column:name" json:"name"`
-	Description       string                 `gorm:"column:description" json:"description"`
-	PrimitiveDataType string                 `gorm:"column:primitive_data_type" json:"primitive_data_type"`
-	ValidationRules   map[string]interface{} `gorm:"column:validation_rules" json:"validation_rules"`
-	IsActive          bool                   `gorm:"column:is_active" json:"is_active"`
-	DisplayType       string                 `gorm:"column:display_type" json:"display_type"`
-	FieldOptions      map[string]interface{} `gorm:"column:field_options" json:"field_options"`
-	Icon              string                 `gorm:"column:icon" json:"icon"`
+	ID                int    `gorm:"column:id" json:"id"`
+	Serial            string `gorm:"column:serial" json:"serial"`
+	Code              string `gorm:"column:code" json:"code"`
+	Name              string `gorm:"column:name" json:"name"`
+	Description       string `gorm:"column:description" json:"description"`
+	PrimitiveDataType string `gorm:"column:primitive_data_type" json:"primitive_data_type"`
+	ValidationRules   string `gorm:"column:validation_rules" json:"validation_rules"`
+	IsActive          bool   `gorm:"column:is_active" json:"is_active"`
+	DisplayType       string `gorm:"column:display_type" json:"display_type"`
+	FieldOptions      string `gorm:"column:field_options" json:"field_options"`
+	Icon              string `gorm:"column:icon" json:"icon"`
+}
+
+func (dt *DataType) TableName() string {
+	return "data_types"
+}
+
+func (dt *DataType) ToEntity() entity.DataType {
+	// convert validation rules from string to map
+	validationRules := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(dt.ValidationRules), &validationRules); err != nil {
+		validationRules = nil
+	}
+
+	// convert field options from string to map
+	fieldOptions := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(dt.FieldOptions), &fieldOptions); err != nil {
+		fieldOptions = nil
+	}
+
+	return entity.DataType{
+		ID:                dt.ID,
+		Serial:            dt.Serial,
+		Code:              dt.Code,
+		Name:              dt.Name,
+		Description:       dt.Description,
+		PrimitiveDataType: dt.PrimitiveDataType,
+		ValidationRules:   validationRules,
+		IsActive:          dt.IsActive,
+		DisplayType:       dt.DisplayType,
+		FieldOptions:      fieldOptions,
+	}
 }

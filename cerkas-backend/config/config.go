@@ -19,6 +19,7 @@ type Config struct {
 	MaxIdleConns    int    `envconfig:"DB_MAX_IDLE_CONNS" default:"5"`
 	MaxOpenConns    int    `envconfig:"DB_MAX_OPEN_CONNS" default:"10"`
 	ConnMaxLifetime int    `envconfig:"DB_CONN_MAX_LIFETIME" default:"10"`
+	IsDebugMode     bool   `envconfig:"DEBUG_MODE" default:"true"`
 
 	RedisHost     string `envconfig:"REDIS_HOST" default:"127.0.0.1"`
 	RedisPort     string `envconfig:"REDIS_PORT" default:"6379"`
