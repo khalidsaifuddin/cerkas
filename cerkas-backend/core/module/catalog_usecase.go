@@ -78,21 +78,21 @@ func (uc *catalogUsecase) GetObjectData(ctx context.Context, request entity.Cata
 		return resp, err
 	}
 
-	objects, err := uc.catalogRepo.GetObjectByCode(ctx, request.ObjectCode, request.TenantCode)
-	if err != nil {
-		return resp, err
+	objects, _ := uc.catalogRepo.GetObjectByCode(ctx, request.ObjectCode, request.TenantCode)
+	objectFields := map[string]any{}
+
+	if objects.Serial != "" {
+		request.ObjectSerial = objects.Serial
+		request.TenantSerial = objects.Tenant.Serial
+
+		// handle custom object fields based on object field table
+		objectFields, err = uc.GetObjectFieldsByObjectCode(ctx, request)
+		if err != nil {
+			return resp, err
+		}
 	}
 
-	request.ObjectSerial = objects.Serial
-	request.TenantSerial = objects.Tenant.Serial
-
-	// TODO: handle custom object fields based on object field table
-	objectFields, err := uc.GetObjectFieldsByObjectCode(ctx, request)
-	if err != nil {
-		return resp, err
-	}
-
-	// TODO: iterate object fields and map to response
+	// iterate object fields and map to response
 	for i, items := range results.Items {
 		for j, item := range items {
 			// put field code to complete field code, and assign new value to field code with column name only after splitted

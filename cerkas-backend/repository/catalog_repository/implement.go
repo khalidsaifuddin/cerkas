@@ -31,10 +31,10 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 	// get list of column from request.ObjectCode
 	listColumnQuery := fmt.Sprintf(`
 	SELECT
-    col.column_name as column_code, 
+    col.column_name as field_code, 
 		col.udt_name as data_type,
     ccu.table_name AS foreign_table_name,
-    ccu.column_name AS foreign_column_name
+    ccu.column_name AS foreign_field_name
 	FROM
 			information_schema.columns AS col
 	LEFT JOIN information_schema.key_column_usage AS kcu ON col.table_name = kcu.table_name
@@ -61,9 +61,9 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 		}
 
 		column[entity.FieldDataType] = dataType.(string)
-		column[entity.FieldColumnCode] = fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, columnCode.(string))
+		column[entity.FieldColumnCode] = columnCode.(string)
 		column[entity.FieldColumnName] = columnCode.(string)
-		column[entity.FieldOriginalColumnCode] = columnCode.(string)
+		column[entity.FieldCompleteColumnCode] = fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, columnCode.(string))
 
 		if foreignTableName != nil && foreignTableName.(string) != request.ObjectCode && foreignColumnName != nil && foreignColumnName.(string) != "id" {
 			column[entity.FieldForeignTableName] = foreignTableName.(string)
@@ -80,12 +80,12 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 			isFound := false
 
 			if !strings.Contains(fieldNameKey, "__") {
-				completeFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, fieldNameKey)
+				// completeFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, fieldNameKey)
 
 				for _, column := range columns {
-					if completeFieldName == column[entity.FieldColumnCode] {
+					if fieldNameKey == column[entity.FieldColumnCode] {
 						isFound = true
-						column[entity.FieldOriginalColumnCode] = fieldNameKey
+						column[entity.FieldColumnCode] = fieldNameKey
 
 						filteredColumns = append(filteredColumns, column)
 					}
@@ -118,7 +118,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 				}
 
 				filteredColumns = append(filteredColumns, map[string]interface{}{
-					entity.FieldOriginalColumnCode: fieldNameKey,
+					entity.FieldCompleteColumnCode: fieldNameKey,
 					entity.FieldColumnCode:         fieldCode,
 					entity.FieldColumnName:         fieldName,
 					entity.FieldForeignColumnName:  foreignColumnName,

@@ -23,12 +23,12 @@ const (
 	FilterOperatorLessThan         FilterOperator = "less_than"
 	FilterOperatorLessThanEqual    FilterOperator = "less_than_equal"
 
-	FieldColumnName            = "column_name"
+	FieldColumnName            = "field_name"
 	FieldDataType              = "data_type"
-	FieldColumnCode            = "column_code"
+	FieldColumnCode            = "field_code"
 	FieldForeignTableName      = "foreign_table_name"
-	FieldForeignColumnName     = "foreign_column_name"
-	FieldOriginalColumnCode    = "original_column_code"
+	FieldForeignColumnName     = "foreign_field_name"
+	FieldCompleteColumnCode    = "complete_field_code"
 	ForeignTable               = "foreign_table"
 	ForeignReferenceColumnName = "foreign_reference_column_name"
 )
@@ -52,14 +52,10 @@ var (
 )
 
 type Tenants struct {
-	ID     int    `json:"id"`
+	ID     int32  `json:"id"`
 	Serial string `json:"serial"`
 	Code   string `json:"code"`
 	Name   string `json:"name"`
-	// CreatedBy string    `json:"created_by"`
-	// CreatedAt time.Time `json:"created_at"`
-	// UpdatedBy string    `json:"updated_by"`
-	// UpdatedAt time.Time `json:"updated_at"`
 }
 
 type DataSource struct {
@@ -75,10 +71,6 @@ type DataSource struct {
 	DBName      string                 `json:"db_name"`
 	Configs     map[string]interface{} `json:"configs"`
 	Tenant      Tenants                `json:"tenant"`
-	// CreatedBy   string                 `json:"created_by"`
-	// CreatedAt   time.Time              `json:"created_at"`
-	// UpdatedBy   string                 `json:"updated_by"`
-	// UpdatedAt   time.Time              `json:"updated_at"`
 }
 
 type Modules struct {
@@ -88,10 +80,6 @@ type Modules struct {
 	Name               string `json:"name"`
 	ParentModuleSerial string `json:"parent_module_serial"`
 	Version            string `json:"version"`
-	// CreatedBy          string    `json:"created_by"`
-	// CreatedAt          time.Time `json:"created_at"`
-	// UpdatedBy          string    `json:"updated_by"`
-	// UpdatedAt          time.Time `json:"updated_at"`
 }
 
 type Products struct {
@@ -100,10 +88,6 @@ type Products struct {
 	Code    string `json:"code"`
 	Name    string `json:"name"`
 	IconURL string `json:"icon_url"`
-	// CreatedBy string    `json:"created_by"`
-	// CreatedAt time.Time `json:"created_at"`
-	// UpdatedBy string    `json:"updated_by"`
-	// UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Objects struct {
@@ -116,10 +100,6 @@ type Objects struct {
 	Description string     `json:"description"`
 	ObjectType  string     `json:"object_type"`
 	DataSource  DataSource `json:"data_source"`
-	// CreatedBy   string     `json:"created_by"`
-	// CreatedAt   time.Time  `json:"created_at"`
-	// UpdatedBy   string     `json:"updated_by"`
-	// UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 type ObjectFields struct {
@@ -138,10 +118,6 @@ type ObjectFields struct {
 	Relation          string                 `json:"relation"`
 	IsSystem          bool                   `json:"is_system"`
 	DefaultValue      string                 `json:"default_value"`
-	// CreatedBy               string                 `json:"created_by"`
-	// CreatedAt               time.Time              `json:"created_at"`
-	// UpdatedBy               string                 `json:"updated_by"`
-	// UpdatedAt               time.Time              `json:"updated_at"`
 }
 
 type DataType struct {

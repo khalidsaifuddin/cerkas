@@ -2,14 +2,15 @@ package util
 
 import (
 	"database/sql"
+	"encoding/json"
 
 	"github.com/cerkas/cerkas-backend/core/entity"
 )
 
 func HandleSingleRow(columnsList []map[string]interface{}, rows *sql.Rows, request entity.CatalogQuery) (item map[string]entity.DataItem, err error) {
 	// Create a slice of interface{} to hold column values
-	values := make([]interface{}, len(columnsList))
-	valuePointers := make([]interface{}, len(columnsList))
+	values := make([]any, len(columnsList))
+	valuePointers := make([]any, len(columnsList))
 	for i := range values {
 		valuePointers[i] = &values[i]
 	}
@@ -24,16 +25,23 @@ func HandleSingleRow(columnsList []map[string]interface{}, rows *sql.Rows, reque
 	for i, colName := range columnsList {
 		val := values[i]
 
-		// TODO: implement dynamic data type so it will not retun literally from db datatype
-
 		fieldName := colName[entity.FieldColumnCode].(string)
-		originalColumnCode := colName[entity.FieldOriginalColumnCode].(string)
+		FieldCode := colName[entity.FieldColumnCode].(string)
 
-		if val, ok := request.Fields[originalColumnCode]; ok && val.FieldName != "" {
+		if val, ok := request.Fields[FieldCode]; ok && val.FieldName != "" {
 			fieldName = val.FieldName
 		}
 
-		item[colName[entity.FieldOriginalColumnCode].(string)] = entity.DataItem{
+		// check if val is json
+		if IsJSON(val) {
+			var jsonData map[string]any
+
+			if err := json.Unmarshal([]byte(val.([]uint8)), &jsonData); err == nil {
+				val = jsonData
+			}
+		}
+
+		item[colName[entity.FieldColumnCode].(string)] = entity.DataItem{
 			FieldCode:    colName[entity.FieldColumnCode].(string),
 			FieldName:    fieldName,
 			DataType:     colName[entity.FieldDataType].(string),
@@ -43,4 +51,25 @@ func HandleSingleRow(columnsList []map[string]interface{}, rows *sql.Rows, reque
 	}
 
 	return item, nil
+}
+
+func IsJSON(input any) bool {
+	var temp any
+
+	// Convert input to []byte if it's a string
+	var data []byte
+	switch v := input.(type) {
+	case string:
+		data = []byte(v)
+	case []byte:
+		data = v
+	default:
+		return false // Not a valid JSON candidate
+	}
+
+	// Try to unmarshal into a generic interface
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return false // Not JSON
+	}
+	return true // Valid JSON
 }

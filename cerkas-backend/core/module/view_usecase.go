@@ -2,40 +2,47 @@ package module
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/cerkas/cerkas-backend/config"
 	"github.com/cerkas/cerkas-backend/core/entity"
 	"github.com/cerkas/cerkas-backend/core/repository"
 	"github.com/cerkas/cerkas-backend/pkg/helper"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type ViewUsecase interface {
-	GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest) (resp entity.ViewContent, err error)
+	GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest) (resp entity.ViewContentResponse, err error)
 }
 
 type viewUsecase struct {
 	cfg         config.Config
 	catalogRepo repository.CatalogRepository
 	viewRepo    repository.ViewRepository
+	catalogUc   CatalogUsecase
 }
 
-func NewViewUsecase(cfg config.Config, catalogRepo repository.CatalogRepository, viewRepo repository.ViewRepository) ViewUsecase {
+func NewViewUsecase(cfg config.Config, catalogRepo repository.CatalogRepository, viewRepo repository.ViewRepository, catalogUc CatalogUsecase) ViewUsecase {
 	return &viewUsecase{
 		cfg:         cfg,
 		catalogRepo: catalogRepo,
 		viewRepo:    viewRepo,
+		catalogUc:   catalogUc,
 	}
 }
 
-func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest) (resp entity.ViewContent, err error) {
+func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest) (resp entity.ViewContentResponse, err error) {
 	viewContentRecord, err := uc.viewRepo.GetViewContentByKeys(ctx, request)
 	if err != nil {
 		return resp, err
 	}
 
 	// Convert map to struct
-	if err = mapToStructSnakeCase(viewContentRecord, &resp); err != nil {
+	if err = mapToStructSnakeCase(viewContentRecord, &resp.ViewContent); err != nil {
 		return resp, err
 	}
 
@@ -62,7 +69,7 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 				return resp, err
 			}
 
-			resp.Tenant = tenantSt
+			resp.ViewContent.Tenant = tenantSt
 		}
 
 	}
@@ -90,7 +97,7 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 				return resp, err
 			}
 
-			resp.Object = objectSt
+			resp.ViewContent.Object = objectSt
 		}
 	}
 
@@ -117,7 +124,7 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 				return resp, err
 			}
 
-			resp.Product = productSt
+			resp.ViewContent.Product = productSt
 		}
 	}
 
@@ -139,7 +146,7 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 				return resp, err
 			}
 
-			resp.ViewSchema = viewSchemaSt
+			resp.ViewContent.ViewSchema = viewSchemaSt
 		}
 	}
 
@@ -161,15 +168,17 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 				return resp, err
 			}
 
-			resp.ViewLayout = viewLayoutSt
+			resp.ViewContent.ViewLayout = viewLayoutSt
 		}
 	}
 
 	// get original fields
 	catalogQuery := entity.CatalogQuery{
-		ObjectCode:  request.ObjectCode,
-		TenantCode:  request.TenantCode,
-		ProductCode: request.ProductCode,
+		ObjectCode:   request.ObjectCode,
+		ObjectSerial: resp.ViewContent.Object.Serial,
+		TenantCode:   request.TenantCode,
+		TenantSerial: resp.ViewContent.Tenant.Serial,
+		ProductCode:  request.ProductCode,
 	}
 
 	originalFields, _, err := uc.catalogRepo.GetColumnList(ctx, catalogQuery)
@@ -177,46 +186,198 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 		return resp, err
 	}
 
+	// handle custom object fields based on object field table
+	objectFields, err := uc.catalogUc.GetObjectFieldsByObjectCode(ctx, catalogQuery)
+	if err != nil {
+		return resp, err
+	}
+
+	for i, originalField := range originalFields {
+		fieldCode := originalField[entity.FieldColumnCode].(string)
+
+		if field, ok := objectFields[fieldCode]; ok {
+			data, ok := field.(entity.ObjectFields)
+			if !ok {
+				continue
+			}
+
+			originalField[entity.FieldDataType] = data.DataType.Code
+			originalField[entity.FieldColumnName] = data.DisplayName
+
+		}
+
+		//  camel case field name
+		originalField[entity.FieldColumnName] = strings.ReplaceAll(cases.Title(language.English).String(originalField[entity.FieldColumnName].(string)), "_", " ")
+		originalField[entity.FieldDataType] = cases.Title(language.English).String(originalField[entity.FieldDataType].(string))
+
+		originalFields[i] = originalField
+	}
+
 	resp.Fields = originalFields
+
+	// fetching layout
+	resp.Layout, err = handleViewLayout(resp.ViewContent.ViewLayout.LayoutConfig, resp.Fields, request)
+	if err != nil {
+		return resp, err
+	}
 
 	return resp, nil
 }
 
+func handleViewLayout(viewLayoutConfig map[string]any, fields []map[string]any, request entity.GetViewContentByKeysRequest) (map[string]any, error) {
+	// TODO: inject view schema into view layout respectively
+
+	/*
+		example of view layout json:
+		{
+				"children": [
+						{
+								"class_name": "",
+								"props": {},
+								"type": "table"
+						}
+				],
+				"class_name": "",
+				"props": {},
+				"type": "webView"
+		}
+
+		because the layout is dynamic, we need to handle it in a generic way
+		it will always have children and type, and it can be recursive
+	*/
+
+	// check if viewLayoutConfig is nil
+	if viewLayoutConfig == nil {
+		return nil, nil
+	}
+
+	// check if viewLayoutConfig is a map
+	if reflect.TypeOf(viewLayoutConfig).Kind() != reflect.Map {
+		return nil, fmt.Errorf("viewLayoutConfig is not a map")
+	}
+
+	switch viewLayoutConfig["type"] {
+	case "webView", "mobileView":
+		// check if children is a slice
+		if reflect.TypeOf(viewLayoutConfig["children"]).Kind() != reflect.Slice {
+			return nil, fmt.Errorf("children is not a slice")
+		}
+
+		// iterate children
+		for i := 0; i < reflect.ValueOf(viewLayoutConfig["children"]).Len(); i++ {
+			child := reflect.ValueOf(viewLayoutConfig["children"]).Index(i)
+
+			// do recursion
+			childConfig, _ := handleViewLayout(child.Interface().(map[string]any), fields, request)
+
+			if childConfig != nil {
+				// set child config
+				child.Set(reflect.ValueOf(childConfig))
+			}
+		}
+	case "table", "detail", "form":
+		className := ""
+		if _, ok := viewLayoutConfig[entity.CLASS_NAME]; ok {
+			className = viewLayoutConfig[entity.CLASS_NAME].(string)
+		}
+
+		if className == "" {
+			viewLayoutConfig[entity.CLASS_NAME] = fmt.Sprintf("%s_%s", viewLayoutConfig["type"], request.ObjectCode)
+		}
+
+		props := map[string]any{}
+		if _, ok := viewLayoutConfig[entity.PROPS]; ok {
+			props = viewLayoutConfig[entity.PROPS].(map[string]any)
+		}
+
+		isInjectProps := false
+
+		// check if field object code exists, if yes, then check if object code value is the same with the object code in request
+		if objCode, exists := props[entity.OBJECT_CODE]; !exists || objCode.(string) == "" || objCode.(string) == request.ObjectCode {
+			isInjectProps = true
+		}
+
+		if isInjectProps {
+			// handle props injection from fields
+			if _, ok := viewLayoutConfig[entity.PROPS]; ok {
+				props := viewLayoutConfig[entity.PROPS].(map[string]any)
+				props[entity.FIELDS] = fields
+				props[entity.OBJECT_CODE] = request.ObjectCode
+				props[entity.TENANT_CODE] = request.TenantCode
+
+				viewLayoutConfig[entity.PROPS] = props
+			}
+		}
+	}
+
+	return viewLayoutConfig, nil
+}
+
 // Conversion function
-func mapToStructSnakeCase(data map[string]entity.DataItem, target interface{}) error {
-	// Get the value of the target struct
+func mapToStructSnakeCase(data map[string]entity.DataItem, target any) error {
 	targetVal := reflect.ValueOf(target).Elem()
 
-	// Loop through the fields of the target struct
-	for i := 0; i < targetVal.NumField(); i++ {
-		// Get the field and its name
+	for i := range targetVal.NumField() {
 		field := targetVal.Type().Field(i)
 		fieldName := field.Name
-
-		// Convert the CamelCase field name to snake_case
 		snakeKey := helper.CamelToSnake(fieldName)
 
-		// Match the snake_case key with the map
+		// Check if key exists in data map
 		if item, exists := data[snakeKey]; exists {
-			// Get the field in the target struct
 			targetField := targetVal.Field(i)
 
 			// Ensure the field is settable
-			if targetField.IsValid() && targetField.CanSet() {
-				// Set the value from the DataItem.Value
-				if item.Value == nil {
+			if !targetField.IsValid() || !targetField.CanSet() || item.Value == nil {
+				continue
+			}
+
+			value := reflect.ValueOf(item.Value)
+
+			// Direct assignment if types match
+			if value.Type().AssignableTo(targetField.Type()) {
+				targetField.Set(value)
+				continue
+			}
+
+			// Handle JSON string or []byte
+			if value.Kind() == reflect.String || (value.Kind() == reflect.Slice && value.Type().Elem().Kind() == reflect.Uint8) {
+				rawData := []byte(value.String())
+				newValuePtr := reflect.New(targetField.Type()).Interface()
+
+				// Try to unmarshal into the target type
+				if err := json.Unmarshal(rawData, newValuePtr); err == nil {
+					targetField.Set(reflect.ValueOf(newValuePtr).Elem())
+				}
+				continue
+			}
+
+			// Handle map[string]interface{}
+			if value.Kind() == reflect.Map {
+				// If target field is a struct, recursively map values
+				if targetField.Kind() == reflect.Struct {
+					newStruct := reflect.New(targetField.Type()).Interface()
+					if err := mapToStructSnakeCase(convertToDataItemMap(value.Interface().(map[string]any)), newStruct); err == nil {
+						targetField.Set(reflect.ValueOf(newStruct).Elem())
+					}
 					continue
 				}
 
-				value := reflect.ValueOf(item.Value)
-
-				// Ensure types match or are assignable
-				if value.Type().AssignableTo(targetField.Type()) {
+				// If target field is map[string]interface{}, set it directly
+				if targetField.Type().AssignableTo(reflect.TypeOf(map[string]any{})) {
 					targetField.Set(value)
+					continue
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+func convertToDataItemMap(input map[string]interface{}) map[string]entity.DataItem {
+	output := make(map[string]entity.DataItem)
+	for key, val := range input {
+		output[key] = entity.DataItem{Value: val}
+	}
+	return output
 }

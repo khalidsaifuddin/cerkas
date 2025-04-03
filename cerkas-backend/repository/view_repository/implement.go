@@ -87,7 +87,7 @@ func (r *repository) GetViewContentByKeys(ctx context.Context, request entity.Ge
 			entity.FieldDataType:           columnTypes[i].DatabaseTypeName(),                                  // SQL type
 			entity.FieldColumnCode:         colName,                                                            // Column name as code
 			entity.FieldColumnName:         helper.CapitalizeWords(helper.ReplaceUnderscoreWithSpace(colName)), // Use the column name as a placeholder for "name"
-			entity.FieldOriginalColumnCode: colName,
+			entity.FieldCompleteColumnCode: colName,
 		}
 
 		columnsList = append(columnsList, columnInfo)
