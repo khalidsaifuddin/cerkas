@@ -581,52 +581,7 @@ func (r *repository) getDataWithPagination(ctx context.Context, columnsString, t
 	for _, filterGroup := range request.Filters {
 		for fieldName, filter := range filterGroup.Filters {
 			if strings.Contains(fieldName, "__") {
-				// if fieldName contains double underscore, then we need to join the table
-				foreignFieldSet := strings.Split(fieldName, "__")
-
-				// get foreign table name based on fieldName
-				cleanTableName := strings.Split(tableName, ".")
-				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
-
-				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
-				foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
-				sourceFieldName := fmt.Sprintf("%v.%v", tableName, foreignFieldSet[0])
-
-				joinClause := fmt.Sprintf("LEFT JOIN %v ON %v = %v", foreignTableName, foreignFieldName, sourceFieldName)
-
-				if !strings.Contains(query, joinClause) {
-					query = fmt.Sprintf("%s %s", query, joinClause)
-				}
-
-				// add filter condition to query
-				operator := entity.OperatorQueryMap[filter.Operator]
-				value := filter.Value
-
-				// handler value of operator is part of entity.OperatorLIKEList, then we should add %
-				if isOperatorInLIKEList(filter.Operator) {
-					value = fmt.Sprintf("%%%v%%", value)
-				}
-
-				var formattedValue string
-
-				switch v := value.(type) {
-				case string:
-					// Wrap strings in single quotes
-					formattedValue = fmt.Sprintf("'%s'", v)
-				case bool:
-					// Booleans: PostgreSQL uses true/false literals
-					formattedValue = fmt.Sprintf("%t", v)
-				case int, int8, int16, int32, int64:
-					formattedValue = fmt.Sprintf("%d", v)
-				case float32, float64:
-					formattedValue = fmt.Sprintf("%f", v)
-				default:
-					// Fallback to string with single quotes
-					formattedValue = fmt.Sprintf("'%v'", v)
-				}
-
-				// Create filter conditions based on the field, operator, and value
-				query = fmt.Sprintf("%s AND %s %s %s", query, fmt.Sprintf("%v.%v", foreignTableName, foreignFieldSet[1]), operator, formattedValue)
+				query = r.HandleJoinQuery(ctx, query, fieldName, tableName, request, filter)
 			}
 		}
 	}
@@ -659,48 +614,7 @@ func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, r
 	for _, filterGroup := range request.Filters {
 		for fieldName, filter := range filterGroup.Filters {
 			if strings.Contains(fieldName, "__") {
-				// if fieldName contains double underscore, then we need to join the table
-				foreignFieldSet := strings.Split(fieldName, "__")
-
-				// get foreign table name based on fieldName
-				cleanTableName := strings.Split(tableName, ".")
-				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
-
-				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
-				foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
-				sourceFieldName := fmt.Sprintf("%v.%v", tableName, foreignFieldSet[0])
-
-				query = fmt.Sprintf("%s LEFT JOIN %v ON %v = %v", query, foreignTableName, foreignFieldName, sourceFieldName)
-
-				// add filter condition to query
-				operator := entity.OperatorQueryMap[filter.Operator]
-				value := filter.Value
-
-				// handler value of operator is part of entity.OperatorLIKEList, then we should add %
-				if isOperatorInLIKEList(filter.Operator) {
-					value = fmt.Sprintf("%%%v%%", value)
-				}
-
-				var formattedValue string
-
-				switch v := value.(type) {
-				case string:
-					// Wrap strings in single quotes
-					formattedValue = fmt.Sprintf("'%s'", v)
-				case bool:
-					// Booleans: PostgreSQL uses true/false literals
-					formattedValue = fmt.Sprintf("%t", v)
-				case int, int8, int16, int32, int64:
-					formattedValue = fmt.Sprintf("%d", v)
-				case float32, float64:
-					formattedValue = fmt.Sprintf("%f", v)
-				default:
-					// Fallback to string with single quotes
-					formattedValue = fmt.Sprintf("'%v'", v)
-				}
-
-				// Create filter conditions based on the field, operator, and value
-				query = fmt.Sprintf("%s AND %s %s %s", query, fmt.Sprintf("%v.%v", foreignTableName, foreignFieldSet[1]), operator, formattedValue)
+				query = r.HandleJoinQuery(ctx, query, fieldName, tableName, request, filter)
 			}
 		}
 	}
@@ -713,5 +627,56 @@ func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, r
 	}
 
 	log.Print(query)
+	return query
+}
+
+func (r *repository) HandleJoinQuery(ctx context.Context, query, fieldName, tableName string, request entity.CatalogQuery, filter entity.FilterItem) (updatedQuery string) {
+	// if fieldName contains double underscore, then we need to join the table
+	foreignFieldSet := strings.Split(fieldName, "__")
+
+	// get foreign table name based on fieldName
+	cleanTableName := strings.Split(tableName, ".")
+	foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
+
+	foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+	foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
+	sourceFieldName := fmt.Sprintf("%v.%v", tableName, foreignFieldSet[0])
+
+	joinClause := fmt.Sprintf("LEFT JOIN %v ON %v = %v", foreignTableName, foreignFieldName, sourceFieldName)
+
+	if !strings.Contains(query, joinClause) {
+		query = fmt.Sprintf("%s %s", query, joinClause)
+	}
+
+	// add filter condition to query
+	operator := entity.OperatorQueryMap[filter.Operator]
+	value := filter.Value
+
+	// handler value of operator is part of entity.OperatorLIKEList, then we should add %
+	if isOperatorInLIKEList(filter.Operator) {
+		value = fmt.Sprintf("%%%v%%", value)
+	}
+
+	var formattedValue string
+
+	switch v := value.(type) {
+	case string:
+		// Wrap strings in single quotes
+		formattedValue = fmt.Sprintf("'%s'", v)
+	case bool:
+		// Booleans: PostgreSQL uses true/false literals
+		formattedValue = fmt.Sprintf("%t", v)
+	case int, int8, int16, int32, int64:
+		formattedValue = fmt.Sprintf("%d", v)
+	case float32, float64:
+		formattedValue = fmt.Sprintf("%f", v)
+	default:
+		// Fallback to string with single quotes
+		formattedValue = fmt.Sprintf("'%v'", v)
+	}
+
+	// Create filter conditions based on the field, operator, and value
+	query = fmt.Sprintf("%s AND %s %s %s", query, fmt.Sprintf("%v.%v", foreignTableName, foreignFieldSet[1]), operator, formattedValue)
+
 	return query
 }
