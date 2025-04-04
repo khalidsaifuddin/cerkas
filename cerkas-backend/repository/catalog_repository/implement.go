@@ -53,7 +53,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 
 	// iterate over the result to get value of column_name and data_type
 	for rows.Next() {
-		column := make(map[string]interface{})
+		column := make(map[string]any)
 
 		var columnCode, dataType, foreignTableName, foreignColumnName interface{}
 		if err := rows.Scan(&columnCode, &dataType, &foreignTableName, &foreignColumnName); err != nil {
@@ -94,22 +94,16 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 				// handle fieldName that has double underscore this indicates that it is a relationship field
 
 				// split fieldName by double underscore
-				fieldNameSplit := strings.Split(fieldNameKey, "__")
-				foreignColumnName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, fieldNameSplit[0])
-				referenceColumnName := fieldNameSplit[1]
+				foreignFieldSet := strings.Split(fieldNameKey, "__")
+				foreignColumnName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
+				referenceColumnName := foreignFieldSet[1]
 
-				// get foreign table name
-				foreignTableName := ""
-				foreignReferenceColumnName := ""
-				for _, column := range columns {
-					if column[entity.FieldColumnCode] == foreignColumnName {
-						foreignTableName = fmt.Sprintf("%v.%v", request.TenantCode, column[entity.FieldForeignTableName])
-						foreignReferenceColumnName = column[entity.FieldForeignColumnName].(string)
-						break
-					}
-				}
+				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, request.ObjectCode, foreignFieldSet[0], request.TenantCode)
 
-				// convert fieldName to tableName.columnName
+				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+				// foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
+				sourceFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
+
 				fieldCode := foreignTableName + "." + referenceColumnName
 				fieldName := fieldCode
 
@@ -117,8 +111,8 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 					fieldName = val
 				}
 
-				filteredColumns = append(filteredColumns, map[string]interface{}{
-					entity.FieldCompleteColumnCode: fieldNameKey,
+				filteredColumns = append(filteredColumns, map[string]any{
+					entity.FieldCompleteColumnCode: fieldCode,
 					entity.FieldColumnCode:         fieldCode,
 					entity.FieldColumnName:         fieldName,
 					entity.FieldForeignColumnName:  foreignColumnName,
@@ -126,7 +120,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 					entity.ForeignTable: map[string]string{
 						entity.FieldForeignTableName:      foreignTableName,
 						entity.FieldForeignColumnName:     referenceColumnName,
-						entity.ForeignReferenceColumnName: foreignReferenceColumnName,
+						entity.ForeignReferenceColumnName: sourceFieldName,
 					},
 				})
 
@@ -145,9 +139,9 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 	// convert columns to string
 	for i, col := range columns {
 		if i == 0 {
-			columnStrings = col[entity.FieldColumnCode].(string)
+			columnStrings = col[entity.FieldCompleteColumnCode].(string)
 		} else {
-			columnStrings = columnStrings + ", " + col[entity.FieldColumnCode].(string)
+			columnStrings = columnStrings + ", " + col[entity.FieldCompleteColumnCode].(string)
 		}
 	}
 
@@ -165,7 +159,7 @@ func (r *repository) GetObjectData(ctx context.Context, request entity.CatalogQu
 	}
 
 	// Get total data count
-	countQuery := getTotalCountQuery(completeTableName, request)
+	countQuery := r.getTotalCountQuery(ctx, completeTableName, request)
 	resultCount, err := r.db.Raw(countQuery).Rows()
 	if err != nil {
 		return resp, err
@@ -176,7 +170,7 @@ func (r *repository) GetObjectData(ctx context.Context, request entity.CatalogQu
 	}
 
 	// Get data with pagination
-	dataQuery := getDataWithPagination(columnsList, columnsString, completeTableName, request)
+	dataQuery := r.getDataWithPagination(ctx, columnsString, completeTableName, request)
 	rows, err := r.db.Raw(dataQuery).Rows()
 	if err != nil {
 		return resp, err
@@ -445,14 +439,46 @@ func (r *repository) GetDataTypeBySerials(ctx context.Context, serials []string)
 	return resp, nil
 }
 
+func (r *repository) GetForeignKeyInfo(ctx context.Context, tableName, columnName, schemaName string) (resp entity.ForeignKeyInfo, err error) {
+	query := `
+	SELECT
+		ccu.table_schema AS foreign_schema,
+		ccu.table_name   AS foreign_table,
+		ccu.column_name  AS foreign_column
+	FROM
+		information_schema.table_constraints AS tc
+		JOIN information_schema.key_column_usage AS kcu
+		  ON tc.constraint_name = kcu.constraint_name
+		 AND tc.constraint_schema = kcu.constraint_schema
+		JOIN information_schema.constraint_column_usage AS ccu
+		  ON ccu.constraint_name = tc.constraint_name
+		 AND ccu.constraint_schema = tc.constraint_schema
+	WHERE
+		tc.constraint_type = 'FOREIGN KEY'
+		AND kcu.column_name = ?
+		AND tc.table_name = ?
+		AND tc.table_schema = ?
+	LIMIT 1;
+	`
+
+	result := ForeignKeyInfo{}
+	if err = r.db.Raw(query, columnName, tableName, schemaName).Scan(&result).Error; err != nil {
+		return resp, err
+	}
+
+	return result.ToEntity(), nil
+}
+
 // local function
 
 // Helper function to build dynamic filters based on CatalogQuery
-func buildFilters(filters []entity.FilterGroup) string {
+func (r *repository) buildFilters(ctx context.Context, request entity.CatalogQuery, tableName string, filters []entity.FilterGroup) string {
 	var filterClauses []string
+
 	for _, filterGroup := range filters {
 		var groupClauses []string
-		for _, filter := range filterGroup.Filters {
+
+		for fieldName, filter := range filterGroup.Filters {
 			operator := entity.OperatorQueryMap[filter.Operator]
 			value := filter.Value
 
@@ -462,12 +488,43 @@ func buildFilters(filters []entity.FilterGroup) string {
 			}
 
 			// Create filter conditions based on the field, operator, and value
-			groupClauses = append(groupClauses, fmt.Sprintf("%s %s '%s'", filter.FieldName, operator, value))
+			var formattedValue string
+
+			switch v := value.(type) {
+			case string:
+				// Wrap strings in single quotes
+				formattedValue = fmt.Sprintf("'%s'", v)
+			case bool:
+				// Booleans: PostgreSQL uses true/false literals
+				formattedValue = fmt.Sprintf("%t", v)
+			case int, int8, int16, int32, int64:
+				formattedValue = fmt.Sprintf("%d", v)
+			case float32, float64:
+				formattedValue = fmt.Sprintf("%f", v)
+			default:
+				// Fallback to string with single quotes
+				formattedValue = fmt.Sprintf("'%v'", v)
+			}
+
+			if strings.Contains(fieldName, "__") {
+				foreignFieldSet := strings.Split(fieldName, "__")
+				fieldName = foreignFieldSet[1]
+				cleanTableName := strings.Split(tableName, ".")
+				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
+				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+
+				fieldName = fmt.Sprintf("%v.%v", foreignTableName, fieldName)
+			}
+
+			groupClauses = append(groupClauses, fmt.Sprintf("%s %s %s", fieldName, operator, formattedValue))
 		}
 		// Combine the group clauses with the group operator (AND/OR)
 		filterClauses = append(filterClauses, fmt.Sprintf("(%s)", strings.Join(groupClauses, fmt.Sprintf(" %s ", filterGroup.Operator))))
 	}
-	return strings.Join(filterClauses, " AND ")
+
+	filterQuery := strings.Join(filterClauses, " AND ")
+
+	return filterQuery
 }
 
 // Helper function to build dynamic order by clauses
@@ -492,7 +549,11 @@ func getSingleData(columnList []map[string]interface{}, columnsString, tableName
 			foreignTableName := column[entity.ForeignTable].(map[string]string)[entity.FieldForeignTableName]
 			foreignTableReferenceColumnName := column[entity.ForeignTable].(map[string]string)[entity.ForeignReferenceColumnName]
 
-			query = fmt.Sprintf("%s LEFT JOIN %v ON %v = %v.%v", query, foreignTableName, column[entity.FieldForeignColumnName], foreignTableName, foreignTableReferenceColumnName)
+			joinClause := fmt.Sprintf("LEFT JOIN %v ON %v = %v.%v", foreignTableName, column[entity.FieldForeignColumnName], foreignTableName, foreignTableReferenceColumnName)
+
+			if !strings.Contains(query, joinClause) {
+				query = fmt.Sprintf("%s %s", query, joinClause)
+			}
 		}
 	}
 
@@ -510,19 +571,63 @@ func getSingleData(columnList []map[string]interface{}, columnsString, tableName
 }
 
 // Main function to get data with pagination, filters, and orders
-func getDataWithPagination(columnList []map[string]interface{}, columnsString, tableName string, request entity.CatalogQuery) string {
+func (r *repository) getDataWithPagination(ctx context.Context, columnsString, tableName string, request entity.CatalogQuery) string {
 	// Start building the base query
 	query := fmt.Sprintf(`
 		SELECT %v
 		FROM %v`, columnsString, tableName)
 
-	// handle join table if any
-	for _, column := range columnList {
-		if column[entity.ForeignTable] != nil {
-			foreignTableName := column[entity.ForeignTable].(map[string]string)[entity.FieldForeignTableName]
-			foreignTableReferenceColumnName := column[entity.ForeignTable].(map[string]string)[entity.ForeignReferenceColumnName]
+	// checking if filters contains join table condition
+	for _, filterGroup := range request.Filters {
+		for fieldName, filter := range filterGroup.Filters {
+			if strings.Contains(fieldName, "__") {
+				// if fieldName contains double underscore, then we need to join the table
+				foreignFieldSet := strings.Split(fieldName, "__")
 
-			query = fmt.Sprintf("%s LEFT JOIN %v ON %v = %v.%v", query, foreignTableName, column[entity.FieldForeignColumnName], foreignTableName, foreignTableReferenceColumnName)
+				// get foreign table name based on fieldName
+				cleanTableName := strings.Split(tableName, ".")
+				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
+
+				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+				foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
+				sourceFieldName := fmt.Sprintf("%v.%v", tableName, foreignFieldSet[0])
+
+				joinClause := fmt.Sprintf("LEFT JOIN %v ON %v = %v", foreignTableName, foreignFieldName, sourceFieldName)
+
+				if !strings.Contains(query, joinClause) {
+					query = fmt.Sprintf("%s %s", query, joinClause)
+				}
+
+				// add filter condition to query
+				operator := entity.OperatorQueryMap[filter.Operator]
+				value := filter.Value
+
+				// handler value of operator is part of entity.OperatorLIKEList, then we should add %
+				if isOperatorInLIKEList(filter.Operator) {
+					value = fmt.Sprintf("%%%v%%", value)
+				}
+
+				var formattedValue string
+
+				switch v := value.(type) {
+				case string:
+					// Wrap strings in single quotes
+					formattedValue = fmt.Sprintf("'%s'", v)
+				case bool:
+					// Booleans: PostgreSQL uses true/false literals
+					formattedValue = fmt.Sprintf("%t", v)
+				case int, int8, int16, int32, int64:
+					formattedValue = fmt.Sprintf("%d", v)
+				case float32, float64:
+					formattedValue = fmt.Sprintf("%f", v)
+				default:
+					// Fallback to string with single quotes
+					formattedValue = fmt.Sprintf("'%v'", v)
+				}
+
+				// Create filter conditions based on the field, operator, and value
+				query = fmt.Sprintf("%s AND %s %s %s", query, fmt.Sprintf("%v.%v", foreignTableName, foreignFieldSet[1]), operator, formattedValue)
+			}
 		}
 	}
 
@@ -530,7 +635,7 @@ func getDataWithPagination(columnList []map[string]interface{}, columnsString, t
 
 	// Apply dynamic filters if they exist
 	if len(request.Filters) > 0 {
-		query = query + " AND " + buildFilters(request.Filters)
+		query = query + " AND " + r.buildFilters(ctx, request, tableName, request.Filters)
 	}
 
 	// Apply dynamic order by if they exist
@@ -545,15 +650,66 @@ func getDataWithPagination(columnList []map[string]interface{}, columnsString, t
 	return query
 }
 
-func getTotalCountQuery(tableName string, request entity.CatalogQuery) string {
+func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, request entity.CatalogQuery) string {
 	query := fmt.Sprintf(`
 	SELECT COUNT(*)
-	FROM %v
-	WHERE deleted_at IS NULL`, tableName)
+	FROM %v`, tableName)
+
+	// checking if filters contains join table condition
+	for _, filterGroup := range request.Filters {
+		for fieldName, filter := range filterGroup.Filters {
+			if strings.Contains(fieldName, "__") {
+				// if fieldName contains double underscore, then we need to join the table
+				foreignFieldSet := strings.Split(fieldName, "__")
+
+				// get foreign table name based on fieldName
+				cleanTableName := strings.Split(tableName, ".")
+				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
+
+				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+				foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
+				sourceFieldName := fmt.Sprintf("%v.%v", tableName, foreignFieldSet[0])
+
+				query = fmt.Sprintf("%s LEFT JOIN %v ON %v = %v", query, foreignTableName, foreignFieldName, sourceFieldName)
+
+				// add filter condition to query
+				operator := entity.OperatorQueryMap[filter.Operator]
+				value := filter.Value
+
+				// handler value of operator is part of entity.OperatorLIKEList, then we should add %
+				if isOperatorInLIKEList(filter.Operator) {
+					value = fmt.Sprintf("%%%v%%", value)
+				}
+
+				var formattedValue string
+
+				switch v := value.(type) {
+				case string:
+					// Wrap strings in single quotes
+					formattedValue = fmt.Sprintf("'%s'", v)
+				case bool:
+					// Booleans: PostgreSQL uses true/false literals
+					formattedValue = fmt.Sprintf("%t", v)
+				case int, int8, int16, int32, int64:
+					formattedValue = fmt.Sprintf("%d", v)
+				case float32, float64:
+					formattedValue = fmt.Sprintf("%f", v)
+				default:
+					// Fallback to string with single quotes
+					formattedValue = fmt.Sprintf("'%v'", v)
+				}
+
+				// Create filter conditions based on the field, operator, and value
+				query = fmt.Sprintf("%s AND %s %s %s", query, fmt.Sprintf("%v.%v", foreignTableName, foreignFieldSet[1]), operator, formattedValue)
+			}
+		}
+	}
+
+	query += fmt.Sprintf(` WHERE %v.deleted_at IS NULL`, tableName)
 
 	// Apply dynamic filters if they exist
 	if len(request.Filters) > 0 {
-		query = query + " AND " + buildFilters(request.Filters)
+		query = query + " AND " + r.buildFilters(ctx, request, tableName, request.Filters)
 	}
 
 	log.Print(query)

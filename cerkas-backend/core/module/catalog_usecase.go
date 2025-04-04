@@ -92,6 +92,8 @@ func (uc *catalogUsecase) GetObjectData(ctx context.Context, request entity.Cata
 		}
 	}
 
+	// TODO: inject view schema to get field config and query, and combine it to request fields and filters
+
 	// iterate object fields and map to response
 	for i, items := range results.Items {
 		for j, item := range items {
@@ -130,6 +132,11 @@ func (uc *catalogUsecase) GetObjectData(ctx context.Context, request entity.Cata
 
 				// set custom data type
 				item.DataType = data.DataType.Name
+			}
+
+			if requestDisplayName, ok := request.Fields[item.CompleteFieldCode]; ok {
+				// set custom field name
+				item.FieldName = requestDisplayName.FieldName
 			}
 
 			// set item.DataType to CamelCase

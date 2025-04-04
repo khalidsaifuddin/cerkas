@@ -36,9 +36,9 @@ func InitRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, conn.CacheService)
 	// handler
 	httpHandler := api.NewHTTPHandler(cfg, catalogUc, viewUc)
 
-	router.POST("t/:tenant_code/p/:product_code/o/:object_code/data", httpHandler.GetObjectData)
-	router.POST("t/:tenant_code/p/:product_code/o/:object_code/data/raw", httpHandler.GetDataByRawQuery)
-	router.POST("t/:tenant_code/p/:product_code/o/:object_code/data/detail/:serial", httpHandler.GetObjectDetail)
+	router.POST("t/:tenant_code/p/:product_code/o/:object_code/view/:view_content_code/data", httpHandler.GetObjectData)
+	router.POST("t/:tenant_code/p/:product_code/o/:object_code/view/:view_content_code/data/raw", httpHandler.GetDataByRawQuery)
+	router.POST("t/:tenant_code/p/:product_code/o/:object_code/view/:view_content_code/data/detail/:serial", httpHandler.GetObjectDetail)
 	router.POST("t/:tenant_code/p/:product_code/o/:object_code/view/:view_content_code/:layout_type", httpHandler.GetContentLayoutByKeys)
 	router.PUT("t/:tenant_code/p/:product_code/o/:object_code/data", httpHandler.CreateObjectData)
 

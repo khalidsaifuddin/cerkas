@@ -137,12 +137,12 @@ type DataType struct {
 type FilterItem struct {
 	FieldName string         `json:"field_name"`
 	Operator  FilterOperator `json:"operator"`
-	Value     string         `json:"value"`
+	Value     any            `json:"value"`
 }
 
 type FilterGroup struct {
-	Operator FilterOperator `json:"operator"`
-	Filters  []FilterItem   `json:"filter_item"`
+	Operator FilterOperator        `json:"operator"`
+	Filters  map[string]FilterItem `json:"filter_item"`
 }
 
 type Order struct {
@@ -156,19 +156,20 @@ type Field struct {
 }
 
 type CatalogQuery struct {
-	Fields        map[string]Field `json:"fields"`
-	Filters       []FilterGroup    `json:"filters"`
-	Orders        []Order          `json:"orders"`
-	Page          int              `json:"page"`
-	PageSize      int              `json:"page_size"`
-	Serial        string           `json:"serial"`
-	ObjectCode    string           `json:"object_code"`
-	ObjectSerial  string           `json:"object_serial"`
-	TenantCode    string           `json:"tenant_code"`
-	TenantSerial  string           `json:"tenant_serial"`
-	ProductCode   string           `json:"product_code"`
-	ProductSerial string           `json:"product_serial"`
-	RawQuery      string           `json:"raw_query"`
+	Fields         map[string]Field `json:"fields"`
+	Filters        []FilterGroup    `json:"filters"`
+	Orders         []Order          `json:"orders"`
+	Page           int              `json:"page"`
+	PageSize       int              `json:"page_size"`
+	Serial         string           `json:"serial"`
+	ObjectCode     string           `json:"object_code"`
+	ObjectSerial   string           `json:"object_serial"`
+	TenantCode     string           `json:"tenant_code"`
+	TenantSerial   string           `json:"tenant_serial"`
+	ProductCode    string           `json:"product_code"`
+	ProductSerial  string           `json:"product_serial"`
+	RawQuery       string           `json:"raw_query"`
+	ViwContentCode string           `json:"view_content_code"`
 }
 
 type DataItem struct {
@@ -195,4 +196,10 @@ type DataMutationRequest struct {
 	TenantCode  string     `json:"tenant_code"`
 	ProductCode string     `json:"product_code"`
 	UserSerial  string     `json:"user_serial"`
+}
+
+type ForeignKeyInfo struct {
+	ForeignSchema string `json:"foreign_schema"`
+	ForeignTable  string `json:"foreign_table"`
+	ForeignColumn string `json:"foreign_column"`
 }

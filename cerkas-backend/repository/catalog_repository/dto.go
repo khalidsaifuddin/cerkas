@@ -202,3 +202,17 @@ func (dt *DataType) ToEntity() entity.DataType {
 		FieldOptions:      fieldOptions,
 	}
 }
+
+type ForeignKeyInfo struct {
+	ForeignSchema string `gorm:"column:foreign_schema"`
+	ForeignTable  string `gorm:"column:foreign_table"`
+	ForeignColumn string `gorm:"column:foreign_column"`
+}
+
+func (fki *ForeignKeyInfo) ToEntity() entity.ForeignKeyInfo {
+	return entity.ForeignKeyInfo{
+		ForeignSchema: fki.ForeignSchema,
+		ForeignTable:  fki.ForeignTable,
+		ForeignColumn: fki.ForeignColumn,
+	}
+}

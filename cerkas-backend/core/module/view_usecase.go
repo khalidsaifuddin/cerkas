@@ -374,7 +374,7 @@ func mapToStructSnakeCase(data map[string]entity.DataItem, target any) error {
 	return nil
 }
 
-func convertToDataItemMap(input map[string]interface{}) map[string]entity.DataItem {
+func convertToDataItemMap(input map[string]any) map[string]entity.DataItem {
 	output := make(map[string]entity.DataItem)
 	for key, val := range input {
 		output[key] = entity.DataItem{Value: val}

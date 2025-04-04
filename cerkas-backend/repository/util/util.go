@@ -3,6 +3,7 @@ package util
 import (
 	"database/sql"
 	"encoding/json"
+	"regexp"
 
 	"github.com/cerkas/cerkas-backend/core/entity"
 )
@@ -33,7 +34,8 @@ func HandleSingleRow(columnsList []map[string]interface{}, rows *sql.Rows, reque
 		}
 
 		// check if val is json
-		if IsJSON(val) {
+		isJson := IsJSON(val)
+		if isJson {
 			var jsonData map[string]any
 
 			if err := json.Unmarshal([]byte(val.([]uint8)), &jsonData); err == nil {
@@ -60,8 +62,16 @@ func IsJSON(input any) bool {
 	var data []byte
 	switch v := input.(type) {
 	case string:
+		// Reject if the string is a pure number (integer or float)
+		if isNumberString(v) {
+			return false
+		}
 		data = []byte(v)
 	case []byte:
+		// Convert to string for number check
+		if isNumberString(string(v)) {
+			return false
+		}
 		data = v
 	default:
 		return false // Not a valid JSON candidate
@@ -72,4 +82,11 @@ func IsJSON(input any) bool {
 		return false // Not JSON
 	}
 	return true // Valid JSON
+}
+
+// isNumberString checks if a string is purely a number (integer or float)
+func isNumberString(s string) bool {
+	numberRegex := `^-?\d+(\.\d+)?([eE][+-]?\d+)?$`
+	match, _ := regexp.MatchString(numberRegex, s)
+	return match
 }
