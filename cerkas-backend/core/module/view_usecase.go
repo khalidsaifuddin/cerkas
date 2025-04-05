@@ -16,7 +16,7 @@ import (
 )
 
 type ViewUsecase interface {
-	GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest) (resp entity.ViewContentResponse, err error)
+	GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest, catalogQuery entity.CatalogQuery) (resp entity.ViewContentResponse, err error)
 }
 
 type viewUsecase struct {
@@ -35,7 +35,7 @@ func NewViewUsecase(cfg config.Config, catalogRepo repository.CatalogRepository,
 	}
 }
 
-func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest) (resp entity.ViewContentResponse, err error) {
+func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entity.GetViewContentByKeysRequest, catalogQuery entity.CatalogQuery) (resp entity.ViewContentResponse, err error) {
 	viewContentRecord, err := uc.viewRepo.GetViewContentByKeys(ctx, request)
 	if err != nil {
 		return resp, err
@@ -173,12 +173,14 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 	}
 
 	// get original fields
-	catalogQuery := entity.CatalogQuery{
-		ObjectCode:   request.ObjectCode,
-		ObjectSerial: resp.ViewContent.Object.Serial,
-		TenantCode:   request.TenantCode,
-		TenantSerial: resp.ViewContent.Tenant.Serial,
-		ProductCode:  request.ProductCode,
+	if catalogQuery.ObjectSerial == "" {
+		catalogQuery = entity.CatalogQuery{
+			ObjectCode:   request.ObjectCode,
+			ObjectSerial: resp.ViewContent.Object.Serial,
+			TenantCode:   request.TenantCode,
+			TenantSerial: resp.ViewContent.Tenant.Serial,
+			ProductCode:  request.ProductCode,
+		}
 	}
 
 	originalFields, _, _, _, err := uc.catalogRepo.GetColumnList(ctx, catalogQuery)
@@ -187,9 +189,12 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 	}
 
 	// handle custom object fields based on object field table
-	objectFields, err := uc.catalogUc.GetObjectFieldsByObjectCode(ctx, catalogQuery)
-	if err != nil {
-		return resp, err
+	objectFields := map[string]any{}
+	if catalogQuery.ObjectSerial != "" {
+		objectFields, err = uc.catalogUc.GetObjectFieldsByObjectCode(ctx, catalogQuery)
+		if err != nil {
+			return resp, err
+		}
 	}
 
 	for i, originalField := range originalFields {

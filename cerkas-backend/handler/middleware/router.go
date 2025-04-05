@@ -30,7 +30,7 @@ func InitRouter(cfg config.Config, db *gorm.DB) (*gin.Engine, conn.CacheService)
 	viewRepo := viewrepository.New(db, cfg)
 
 	// usecase
-	catalogUc := module.NewCatalogUsecase(cfg, catalogRepo)
+	catalogUc := module.NewCatalogUsecase(cfg, catalogRepo, viewRepo)
 	viewUc := module.NewViewUsecase(cfg, catalogRepo, viewRepo, catalogUc)
 
 	// handler

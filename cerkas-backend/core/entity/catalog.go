@@ -157,20 +157,20 @@ type Field struct {
 }
 
 type CatalogQuery struct {
-	Fields         map[string]Field `json:"fields"`
-	Filters        []FilterGroup    `json:"filters"`
-	Orders         []Order          `json:"orders"`
-	Page           int              `json:"page"`
-	PageSize       int              `json:"page_size"`
-	Serial         string           `json:"serial"`
-	ObjectCode     string           `json:"object_code"`
-	ObjectSerial   string           `json:"object_serial"`
-	TenantCode     string           `json:"tenant_code"`
-	TenantSerial   string           `json:"tenant_serial"`
-	ProductCode    string           `json:"product_code"`
-	ProductSerial  string           `json:"product_serial"`
-	RawQuery       string           `json:"raw_query"`
-	ViwContentCode string           `json:"view_content_code"`
+	Fields          map[string]Field `json:"fields"`
+	Filters         []FilterGroup    `json:"filters"`
+	Orders          []Order          `json:"orders"`
+	Page            int              `json:"page"`
+	PageSize        int              `json:"page_size"`
+	Serial          string           `json:"serial"`
+	ObjectCode      string           `json:"object_code"`
+	ObjectSerial    string           `json:"object_serial"`
+	TenantCode      string           `json:"tenant_code"`
+	TenantSerial    string           `json:"tenant_serial"`
+	ProductCode     string           `json:"product_code"`
+	ProductSerial   string           `json:"product_serial"`
+	RawQuery        string           `json:"raw_query"`
+	ViewContentCode string           `json:"view_content_code"`
 }
 
 type DataItem struct {

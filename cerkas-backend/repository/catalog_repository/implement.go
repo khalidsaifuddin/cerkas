@@ -481,10 +481,10 @@ func (r *repository) GetForeignKeyInfo(ctx context.Context, tableName, columnNam
 // local function
 
 // Helper function to build dynamic filters based on CatalogQuery
-func (r *repository) buildFilters(ctx context.Context, request entity.CatalogQuery, tableName string, filters []entity.FilterGroup) string {
+func (r *repository) buildFilters(_ context.Context, request entity.CatalogQuery, tableName string) string {
 	var filterClauses []string
 
-	for _, filterGroup := range filters {
+	for _, filterGroup := range request.Filters {
 		var groupClauses []string
 
 		for fieldName, filter := range filterGroup.Filters {
@@ -518,11 +518,11 @@ func (r *repository) buildFilters(ctx context.Context, request entity.CatalogQue
 			if strings.Contains(fieldName, "__") {
 				foreignFieldSet := strings.Split(fieldName, "__")
 				lastFieldName := foreignFieldSet[1]
-				// cleanTableName := strings.Split(tableName, ".")
-				// foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
-				// foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
 
 				fieldName = fmt.Sprintf("%v.%v", fieldName, lastFieldName)
+			} else {
+				// Prefix the field name with the table name
+				fieldName = fmt.Sprintf("%v.%v", tableName, fieldName)
 			}
 
 			groupClauses = append(groupClauses, fmt.Sprintf("%s %s %s", fieldName, operator, formattedValue))
@@ -582,9 +582,7 @@ func getSingleData(columnList []map[string]interface{}, columnsString, tableName
 // Main function to get data with pagination, filters, and orders
 func (r *repository) getDataWithPagination(ctx context.Context, columnsString, tableName string, request entity.CatalogQuery, joinQueryMap map[string]string, joinQueryOrder []string) string {
 	// Start building the base query
-	query := fmt.Sprintf(`
-		SELECT %v
-		FROM %v`, columnsString, tableName)
+	query := fmt.Sprintf(`SELECT %v FROM %v`, columnsString, tableName)
 
 	// handle join table if any
 	for _, joinKey := range joinQueryOrder {
@@ -609,7 +607,7 @@ func (r *repository) getDataWithPagination(ctx context.Context, columnsString, t
 
 	// Apply dynamic filters if they exist
 	if len(request.Filters) > 0 {
-		query = query + " AND " + r.buildFilters(ctx, request, tableName, request.Filters)
+		query = query + " AND " + r.buildFilters(ctx, request, tableName)
 	}
 
 	// Apply dynamic order by if they exist
@@ -625,9 +623,7 @@ func (r *repository) getDataWithPagination(ctx context.Context, columnsString, t
 }
 
 func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, request entity.CatalogQuery, joinQueryMap map[string]string, joinQueryOrder []string) string {
-	query := fmt.Sprintf(`
-	SELECT COUNT(*)
-	FROM %v`, tableName)
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM %v`, tableName)
 
 	// integrate join query if any
 	for _, joinKey := range joinQueryOrder {
@@ -652,7 +648,7 @@ func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, r
 
 	// Apply dynamic filters if they exist
 	if len(request.Filters) > 0 {
-		query = query + " AND " + r.buildFilters(ctx, request, tableName, request.Filters)
+		query = query + " AND " + r.buildFilters(ctx, request, tableName)
 	}
 
 	log.Print(query)

@@ -154,7 +154,14 @@ func (h *httpHandler) GetContentLayoutByKeys(c *gin.Context) {
 	request.ViewContentCode = c.Param("view_content_code")
 	request.LayoutType = c.Param("layout_type")
 
-	response, err := h.viewUc.GetContentLayoutByKeys(c, request)
+	catalogQuery := entity.CatalogQuery{
+		TenantCode:      request.TenantCode,
+		ProductCode:     request.ProductCode,
+		ObjectCode:      request.ObjectCode,
+		ViewContentCode: request.ViewContentCode,
+	}
+
+	response, err := h.viewUc.GetContentLayoutByKeys(c, request, catalogQuery)
 	if err != nil {
 		statusCode = http.StatusInternalServerError
 		statusMessage = err.Error()
