@@ -25,7 +25,7 @@ type ViewSchema struct {
 	Code          string         `json:"code"`
 	Name          string         `json:"name"`
 	Query         map[string]any `json:"query"`
-	DisplayField  []any          `json:"display_field"`
+	DisplayField  map[string]any `json:"display_field"`
 	StructureType string         `json:"structure_type"`
 	ActionSerial  string         `json:"action_serial"`
 	IsFavorite    bool           `json:"is_favorite"`

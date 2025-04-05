@@ -164,8 +164,31 @@ func (uc *catalogUsecase) GetObjectData(ctx context.Context, request entity.Cata
 
 	request.Filters = combinedQuery.Filters
 
-	// TODO; combine request.Fields with view schema fields
-	// TODO; combone request.Orders with view schema orders
+	// combine request.Fields with view schema fields
+	viewSchemaFields := viewSchemaRecord.DisplayField
+	if len(viewSchemaFields) > 0 {
+		for key, item := range viewSchemaFields {
+			// convert item to entity.Field
+			field := entity.Field{}
+
+			if _, ok := item.(map[string]any); !ok {
+				continue
+			}
+
+			item := item.(map[string]any)
+
+			if fieldCode, ok := item["field_code"].(string); ok {
+				field.FieldCode = fieldCode
+			}
+			if fieldName, ok := item["field_name"].(string); ok {
+				field.FieldName = fieldName
+			}
+
+			request.Fields[key] = field
+		}
+	}
+
+	// TODO; combine request.Orders with view schema orders
 
 	results, err := uc.catalogRepo.GetObjectData(ctx, request)
 	if err != nil {
