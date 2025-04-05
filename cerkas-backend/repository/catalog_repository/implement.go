@@ -83,8 +83,6 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 			isFound := false
 
 			if !strings.Contains(fieldNameKey, "__") {
-				// completeFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, fieldNameKey)
-
 				for _, column := range columns {
 					if fieldNameKey == column[entity.FieldColumnCode] {
 						isFound = true
@@ -94,9 +92,9 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 					}
 				}
 			} else {
-				// // TODO: handle fieldName that has double underscore this indicates that it is a relationship field
+				// handle fieldName that has double underscore this indicates that it is a relationship field
 				foreignFieldSet := strings.Split(fieldNameKey, "__")
-				queryResult, joinQueryMap := r.HandleChainingJoinQuery(ctx, "", fieldNameKey, request.ObjectCode, request, entity.FilterItem{})
+				_, joinQueryMap := r.HandleChainingJoinQuery(ctx, "", fieldNameKey, request.ObjectCode, request, entity.FilterItem{})
 
 				// append joinQueryMap to joinQueryMapAll
 				for k, v := range joinQueryMap {
@@ -104,23 +102,9 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 					joinQueryOrderAll = append(joinQueryOrderAll, k)
 				}
 
-				fmt.Printf("queryResult: %s\n", queryResult)
-				fmt.Printf("joinQueryMap: %v\n", joinQueryMap)
-
-				// // split fieldName by double underscore
+				// split fieldName by double underscore
 				foreignColumnName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
 				referenceColumnName := foreignFieldSet[1]
-
-				fmt.Printf("foreignColumnName: %s\n", foreignColumnName)
-				fmt.Printf("referenceColumnName: %s\n", referenceColumnName)
-
-				fmt.Printf("check")
-
-				// foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, request.ObjectCode, foreignFieldSet[0], request.TenantCode)
-
-				// foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
-				// // foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
-				// sourceFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
 
 				if _, ok := joinQueryMap[fieldNameKey]; ok {
 					fieldNameKeyList := strings.Split(fieldNameKey, "__")
@@ -141,9 +125,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 						entity.FieldForeignColumnName:  foreignColumnName,
 						entity.FieldDataType:           "text",
 						entity.ForeignTable: map[string]string{
-							// entity.FieldForeignTableName:      foreignTableName,
 							entity.FieldForeignColumnName: referenceColumnName,
-							// entity.ForeignReferenceColumnName: sourceFieldName,
 						},
 					}
 
