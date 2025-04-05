@@ -43,7 +43,12 @@ func HandleSingleRow(columnsList []map[string]interface{}, rows *sql.Rows, reque
 			}
 		}
 
-		item[colName[entity.FieldColumnCode].(string)] = entity.DataItem{
+		key := colName[entity.FieldColumnCode].(string)
+		if _, ok := colName[entity.FieldOriginalFieldCode]; ok {
+			key = colName[entity.FieldOriginalFieldCode].(string)
+		}
+
+		item[key] = entity.DataItem{
 			FieldCode:    colName[entity.FieldColumnCode].(string),
 			FieldName:    fieldName,
 			DataType:     colName[entity.FieldDataType].(string),

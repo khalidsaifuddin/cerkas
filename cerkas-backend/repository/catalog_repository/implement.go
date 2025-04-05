@@ -27,7 +27,10 @@ func New(cfg config.Config, db *gorm.DB) repository_intf.CatalogRepository {
 	}
 }
 
-func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQuery) (columns []map[string]interface{}, columnStrings string, err error) {
+func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQuery) (columns []map[string]interface{}, columnStrings string, joinQueryMap map[string]string, joinQueryOrder []string, err error) {
+	joinQueryMapAll := make(map[string]string)
+	joinQueryOrderAll := make([]string, 0)
+
 	// get list of column from request.ObjectCode
 	listColumnQuery := fmt.Sprintf(`
 	SELECT
@@ -47,7 +50,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 
 	rows, err := r.db.Raw(listColumnQuery).Rows()
 	if err != nil {
-		return columns, columnStrings, err
+		return columns, columnStrings, joinQueryMap, joinQueryOrder, err
 	}
 	defer rows.Close()
 
@@ -57,7 +60,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 
 		var columnCode, dataType, foreignTableName, foreignColumnName interface{}
 		if err := rows.Scan(&columnCode, &dataType, &foreignTableName, &foreignColumnName); err != nil {
-			return columns, columnStrings, err
+			return columns, columnStrings, joinQueryMap, joinQueryOrder, err
 		}
 
 		column[entity.FieldDataType] = dataType.(string)
@@ -91,45 +94,68 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 					}
 				}
 			} else {
-				// handle fieldName that has double underscore this indicates that it is a relationship field
-
-				// split fieldName by double underscore
+				// // TODO: handle fieldName that has double underscore this indicates that it is a relationship field
 				foreignFieldSet := strings.Split(fieldNameKey, "__")
+				queryResult, joinQueryMap := r.HandleChainingJoinQuery(ctx, "", fieldNameKey, request.ObjectCode, request, entity.FilterItem{})
+
+				// append joinQueryMap to joinQueryMapAll
+				for k, v := range joinQueryMap {
+					joinQueryMapAll[k] = v
+					joinQueryOrderAll = append(joinQueryOrderAll, k)
+				}
+
+				fmt.Printf("queryResult: %s\n", queryResult)
+				fmt.Printf("joinQueryMap: %v\n", joinQueryMap)
+
+				// // split fieldName by double underscore
 				foreignColumnName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
 				referenceColumnName := foreignFieldSet[1]
 
-				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, request.ObjectCode, foreignFieldSet[0], request.TenantCode)
+				fmt.Printf("foreignColumnName: %s\n", foreignColumnName)
+				fmt.Printf("referenceColumnName: %s\n", referenceColumnName)
 
-				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
-				// foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
-				sourceFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
+				fmt.Printf("check")
 
-				fieldCode := foreignTableName + "." + referenceColumnName
-				fieldName := fieldCode
+				// foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, request.ObjectCode, foreignFieldSet[0], request.TenantCode)
 
-				if val := request.Fields[fieldNameKey].FieldName; val != "" {
-					fieldName = val
+				// foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+				// // foreignFieldName := fmt.Sprintf("%v.%v", foreignTableName, foreignKeyInfo.ForeignColumn)
+				// sourceFieldName := fmt.Sprintf("%v.%v.%v", request.TenantCode, request.ObjectCode, foreignFieldSet[0])
+
+				if _, ok := joinQueryMap[fieldNameKey]; ok {
+					fieldNameKeyList := strings.Split(fieldNameKey, "__")
+					destinationColumn := fieldNameKeyList[len(fieldNameKeyList)-1]
+
+					fieldName := fmt.Sprintf("%v.%v", fieldNameKey, destinationColumn)
+					fieldCode := fieldName
+
+					if val := request.Fields[fieldNameKey].FieldName; val != "" {
+						fieldName = val
+					}
+
+					filteredColumn := map[string]any{
+						entity.FieldOriginalFieldCode:  fieldNameKey,
+						entity.FieldCompleteColumnCode: fieldCode,
+						entity.FieldColumnCode:         fieldCode,
+						entity.FieldColumnName:         fieldName,
+						entity.FieldForeignColumnName:  foreignColumnName,
+						entity.FieldDataType:           "text",
+						entity.ForeignTable: map[string]string{
+							// entity.FieldForeignTableName:      foreignTableName,
+							entity.FieldForeignColumnName: referenceColumnName,
+							// entity.ForeignReferenceColumnName: sourceFieldName,
+						},
+					}
+
+					filteredColumns = append(filteredColumns, filteredColumn)
 				}
-
-				filteredColumns = append(filteredColumns, map[string]any{
-					entity.FieldCompleteColumnCode: fieldCode,
-					entity.FieldColumnCode:         fieldCode,
-					entity.FieldColumnName:         fieldName,
-					entity.FieldForeignColumnName:  foreignColumnName,
-					entity.FieldDataType:           "text",
-					entity.ForeignTable: map[string]string{
-						entity.FieldForeignTableName:      foreignTableName,
-						entity.FieldForeignColumnName:     referenceColumnName,
-						entity.ForeignReferenceColumnName: sourceFieldName,
-					},
-				})
 
 				isFound = true
 			}
 
 			// after finish iterating columns, if field is not found in columns, return error
 			if !isFound {
-				return columns, columnStrings, fmt.Errorf("field %v is not found in table %v", fieldNameKey, request.ObjectCode)
+				return columns, columnStrings, joinQueryMap, joinQueryOrder, fmt.Errorf("field %v is not found in table %v", fieldNameKey, request.ObjectCode)
 			}
 		}
 
@@ -145,7 +171,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 		}
 	}
 
-	return columns, columnStrings, nil
+	return columns, columnStrings, joinQueryMapAll, joinQueryOrderAll, err
 }
 
 func (r *repository) GetObjectData(ctx context.Context, request entity.CatalogQuery) (resp entity.CatalogResponse, err error) {
@@ -153,13 +179,14 @@ func (r *repository) GetObjectData(ctx context.Context, request entity.CatalogQu
 	completeTableName := request.TenantCode + "." + request.ObjectCode
 
 	// Get list of columns
-	columnsList, columnsString, err := r.GetColumnList(ctx, request)
+	columnsList, columnsString, joinQueryMap, joinQueryOrder, err := r.GetColumnList(ctx, request)
+	fmt.Print("joinQueryMap: ", joinQueryMap)
 	if err != nil {
 		return resp, err
 	}
 
 	// Get total data count
-	countQuery := r.getTotalCountQuery(ctx, completeTableName, request)
+	countQuery := r.getTotalCountQuery(ctx, completeTableName, request, joinQueryMap, joinQueryOrder)
 	resultCount, err := r.db.Raw(countQuery).Rows()
 	if err != nil {
 		return resp, err
@@ -170,7 +197,7 @@ func (r *repository) GetObjectData(ctx context.Context, request entity.CatalogQu
 	}
 
 	// Get data with pagination
-	dataQuery := r.getDataWithPagination(ctx, columnsString, completeTableName, request)
+	dataQuery := r.getDataWithPagination(ctx, columnsString, completeTableName, request, joinQueryMap, joinQueryOrder)
 	rows, err := r.db.Raw(dataQuery).Rows()
 	if err != nil {
 		return resp, err
@@ -199,7 +226,7 @@ func (r *repository) GetObjectDetail(ctx context.Context, request entity.Catalog
 	completeTableName := request.TenantCode + "." + request.ObjectCode
 
 	// Get list of columns
-	columnsList, columnsString, err := r.GetColumnList(ctx, request)
+	columnsList, columnsString, _, _, err := r.GetColumnList(ctx, request)
 	if err != nil {
 		return resp, err
 	}
@@ -508,12 +535,12 @@ func (r *repository) buildFilters(ctx context.Context, request entity.CatalogQue
 
 			if strings.Contains(fieldName, "__") {
 				foreignFieldSet := strings.Split(fieldName, "__")
-				fieldName = foreignFieldSet[1]
-				cleanTableName := strings.Split(tableName, ".")
-				foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
-				foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+				lastFieldName := foreignFieldSet[1]
+				// cleanTableName := strings.Split(tableName, ".")
+				// foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, cleanTableName[1], foreignFieldSet[0], request.TenantCode)
+				// foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
 
-				fieldName = fmt.Sprintf("%v.%v", foreignTableName, fieldName)
+				fieldName = fmt.Sprintf("%v.%v", fieldName, lastFieldName)
 			}
 
 			groupClauses = append(groupClauses, fmt.Sprintf("%s %s %s", fieldName, operator, formattedValue))
@@ -571,17 +598,27 @@ func getSingleData(columnList []map[string]interface{}, columnsString, tableName
 }
 
 // Main function to get data with pagination, filters, and orders
-func (r *repository) getDataWithPagination(ctx context.Context, columnsString, tableName string, request entity.CatalogQuery) string {
+func (r *repository) getDataWithPagination(ctx context.Context, columnsString, tableName string, request entity.CatalogQuery, joinQueryMap map[string]string, joinQueryOrder []string) string {
 	// Start building the base query
 	query := fmt.Sprintf(`
 		SELECT %v
 		FROM %v`, columnsString, tableName)
 
+	// handle join table if any
+	for _, joinKey := range joinQueryOrder {
+		if !strings.Contains(query, joinQueryMap[joinKey]) {
+			query = fmt.Sprintf("%s %s", query, joinQueryMap[joinKey])
+		}
+	}
+
 	// checking if filters contains join table condition
 	for _, filterGroup := range request.Filters {
 		for fieldName, filter := range filterGroup.Filters {
 			if strings.Contains(fieldName, "__") {
-				query = r.HandleJoinQuery(ctx, query, fieldName, tableName, request, filter)
+				queryResult, joinQueryMap := r.HandleChainingJoinQuery(ctx, query, fieldName, tableName, request, filter)
+				query = queryResult
+
+				fmt.Print("joinQueryMap: ", joinQueryMap)
 			}
 		}
 	}
@@ -605,16 +642,26 @@ func (r *repository) getDataWithPagination(ctx context.Context, columnsString, t
 	return query
 }
 
-func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, request entity.CatalogQuery) string {
+func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, request entity.CatalogQuery, joinQueryMap map[string]string, joinQueryOrder []string) string {
 	query := fmt.Sprintf(`
 	SELECT COUNT(*)
 	FROM %v`, tableName)
+
+	// integrate join query if any
+	for _, joinKey := range joinQueryOrder {
+		if !strings.Contains(query, joinQueryMap[joinKey]) {
+			query = fmt.Sprintf("%s %s", query, joinQueryMap[joinKey])
+		}
+	}
 
 	// checking if filters contains join table condition
 	for _, filterGroup := range request.Filters {
 		for fieldName, filter := range filterGroup.Filters {
 			if strings.Contains(fieldName, "__") {
-				query = r.HandleJoinQuery(ctx, query, fieldName, tableName, request, filter)
+				queryResult, joinQueryMap := r.HandleChainingJoinQuery(ctx, query, fieldName, tableName, request, filter)
+				query = queryResult
+
+				fmt.Print("joinQueryMap: ", joinQueryMap)
 			}
 		}
 	}
@@ -628,6 +675,57 @@ func (r *repository) getTotalCountQuery(ctx context.Context, tableName string, r
 
 	log.Print(query)
 	return query
+}
+
+func (r *repository) HandleChainingJoinQuery(ctx context.Context, query, fieldName, tableName string, request entity.CatalogQuery, filter entity.FilterItem) (updatedQuery string, joinQueryMap map[string]string) {
+	// case example: user_serial__user_type_serial__name
+	joinQueryMap = make(map[string]string)
+	joinQuery := query
+
+	foreignFieldSet := strings.Split(fieldName, "__")
+	cleanTableName := strings.Split(tableName, ".")
+
+	currentTableName := cleanTableName[0]
+	if len(cleanTableName) > 1 {
+		currentTableName = cleanTableName[1]
+	}
+
+	nextJoinAlias := ""
+
+	for i, foreignField := range foreignFieldSet {
+		if i < len(foreignFieldSet)-1 {
+			foreignKeyInfo, _ := r.GetForeignKeyInfo(ctx, currentTableName, foreignField, request.TenantCode)
+			foreignTableName := fmt.Sprintf("%v.%v", request.TenantCode, foreignKeyInfo.ForeignTable)
+
+			// check if i is the last element
+			joinAlias := fieldName
+			if i < len(foreignFieldSet)-2 {
+				joinAliasUpdated := fmt.Sprintf("%v__%v", currentTableName, foreignField)
+				joinAlias = joinAliasUpdated
+			}
+
+			joinAliasField := joinAlias
+			joinTableName := currentTableName
+			if nextJoinAlias != "" {
+				joinTableName = nextJoinAlias
+			}
+
+			foreignFieldName := fmt.Sprintf("%v.%v", joinAliasField, foreignKeyInfo.ForeignColumn)
+			sourceFieldName := fmt.Sprintf("%v.%v", joinTableName, foreignField)
+
+			joinClause := fmt.Sprintf("LEFT JOIN %v as %v ON %v = %v", foreignTableName, joinAlias, foreignFieldName, sourceFieldName)
+			if !strings.Contains(joinQuery, joinClause) {
+				joinQuery = fmt.Sprintf("%s %s", joinQuery, joinClause)
+			}
+
+			joinQueryMap[joinAlias] = joinClause
+
+			currentTableName = foreignKeyInfo.ForeignTable
+			nextJoinAlias = joinAlias
+		}
+	}
+
+	return joinQuery, joinQueryMap
 }
 
 func (r *repository) HandleJoinQuery(ctx context.Context, query, fieldName, tableName string, request entity.CatalogQuery, filter entity.FilterItem) (updatedQuery string) {

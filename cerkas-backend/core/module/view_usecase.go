@@ -181,7 +181,7 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 		ProductCode:  request.ProductCode,
 	}
 
-	originalFields, _, err := uc.catalogRepo.GetColumnList(ctx, catalogQuery)
+	originalFields, _, _, _, err := uc.catalogRepo.GetColumnList(ctx, catalogQuery)
 	if err != nil {
 		return resp, err
 	}

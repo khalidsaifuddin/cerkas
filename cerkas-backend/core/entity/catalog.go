@@ -29,6 +29,7 @@ const (
 	FieldForeignTableName      = "foreign_table_name"
 	FieldForeignColumnName     = "foreign_field_name"
 	FieldCompleteColumnCode    = "complete_field_code"
+	FieldOriginalFieldCode     = "original_field_code"
 	ForeignTable               = "foreign_table"
 	ForeignReferenceColumnName = "foreign_reference_column_name"
 )
