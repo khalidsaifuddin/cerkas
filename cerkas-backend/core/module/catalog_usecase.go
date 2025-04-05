@@ -89,7 +89,9 @@ func (uc *catalogUsecase) GetObjectData(ctx context.Context, request entity.Cata
 		return resp, err
 	}
 
-	combinedQuery := entity.CatalogQuery{}
+	combinedQuery := entity.CatalogQuery{
+		Fields: map[string]entity.Field{},
+	}
 
 	viewSchemaRecord := viewContent.ViewContent.ViewSchema
 	viewSchemaQuery := viewSchemaRecord.Query
@@ -184,11 +186,20 @@ func (uc *catalogUsecase) GetObjectData(ctx context.Context, request entity.Cata
 				field.FieldName = fieldName
 			}
 
-			request.Fields[key] = field
+			combinedQuery.Fields[key] = field
 		}
 	}
 
-	// TODO; combine request.Orders with view schema orders
+	// combine request.Orders with view schema orders
+	if len(request.Fields) > 0 {
+		for key, field := range request.Fields {
+			if _, ok := combinedQuery.Fields[key]; !ok {
+				combinedQuery.Fields[key] = field
+			}
+		}
+	}
+
+	request.Fields = combinedQuery.Fields
 
 	results, err := uc.catalogRepo.GetObjectData(ctx, request)
 	if err != nil {

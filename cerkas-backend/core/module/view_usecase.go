@@ -147,6 +147,34 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 			}
 
 			resp.ViewContent.ViewSchema = viewSchemaSt
+
+			if catalogQuery.Fields == nil {
+				catalogQuery.Fields = make(map[string]entity.Field)
+			}
+
+			// inject viewSchema fields into request
+			viewSchemaFields := viewSchemaSt.DisplayField
+			if len(viewSchemaFields) > 0 {
+				for key, item := range viewSchemaFields {
+					// convert item to entity.Field
+					field := entity.Field{}
+
+					if _, ok := item.(map[string]any); !ok {
+						continue
+					}
+
+					item := item.(map[string]any)
+
+					if fieldCode, ok := item["field_code"].(string); ok {
+						field.FieldCode = fieldCode
+					}
+					if fieldName, ok := item["field_name"].(string); ok {
+						field.FieldName = fieldName
+					}
+
+					catalogQuery.Fields[key] = field
+				}
+			}
 		}
 	}
 
@@ -180,6 +208,7 @@ func (uc *viewUsecase) GetContentLayoutByKeys(ctx context.Context, request entit
 			TenantCode:   request.TenantCode,
 			TenantSerial: resp.ViewContent.Tenant.Serial,
 			ProductCode:  request.ProductCode,
+			Fields:       catalogQuery.Fields,
 		}
 	}
 
@@ -287,7 +316,7 @@ func handleViewLayout(viewLayoutConfig map[string]any, fields []map[string]any, 
 		}
 
 		if className == "" {
-			viewLayoutConfig[entity.CLASS_NAME] = fmt.Sprintf("%s_%s", viewLayoutConfig["type"], request.ObjectCode)
+			viewLayoutConfig[entity.CLASS_NAME] = fmt.Sprintf("%s__%s", viewLayoutConfig["type"], request.ObjectCode)
 		}
 
 		props := map[string]any{}

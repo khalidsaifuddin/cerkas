@@ -78,7 +78,7 @@ func (r *repository) GetColumnList(ctx context.Context, request entity.CatalogQu
 
 	// filter columns if request.Fields is not empty
 	if len(request.Fields) > 0 {
-		var filteredColumns []map[string]interface{}
+		var filteredColumns []map[string]any
 		for fieldNameKey := range request.Fields {
 			isFound := false
 
