@@ -1,0 +1,3 @@
+{
+  "/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page": "app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.js"
+}
