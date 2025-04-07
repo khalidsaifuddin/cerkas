@@ -7,6 +7,17 @@ import { useEffect, useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+const metadataColumnList = [
+  "created_at",
+  "created_by",
+  "deleted_at",
+  "deleted_by",
+  "updated_at",
+  "updated_by",
+  "serial",
+  "id"
+]
+
 interface RouteParams {
   tenantCode: string;
   productCode: string;
@@ -20,59 +31,93 @@ interface Field {
   field_name: string;
 }
 
-const DynamicTable = ({ fields }: { fields: Field[] }) => {
+interface DynamicTableProps {
+  fields: Field[];
+  rows?: Record<string, any>[];
+  is_displaying_metadata_column?: Boolean;
+}
+
+const DynamicTable = ({ fields, rows = [], is_displaying_metadata_column }: DynamicTableProps) => {
   return (
     <div className="overflow-x-auto">
       <table className="table-auto border border-gray-100 whitespace-nowrap">
         <thead>
           <tr className="bg-gray-100">
-            {fields.map((field) => (
-              <th
-                key={field.field_code}
-                className="px-2 py-2 border border-gray-100 text-left"
-                style={{
-                  minWidth: `${field.field_name.length * 10 + 40}px`, // dynamic width
-                }}
-              >
-                {field.field_name}
-              </th>
-            ))}
+            {fields.map((field) => {
+              if (!is_displaying_metadata_column && metadataColumnList.includes(field.field_code)) {
+                return null; // skip rendering this column
+              }
+
+              return (
+                <th
+                  key={field.field_code}
+                  className="px-2 py-2 border border-gray-100 text-left"
+                  style={{
+                    minWidth: `${field.field_name.length * 10 + 40}px`,
+                  }}
+                >
+                  {field.field_name}
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>
-          <tr>
-            {fields.map((field) => (
+          {rows.length > 0 ? (
+            rows.map((row, rowIndex) => {
+              return (
+                <tr key={rowIndex}>
+                  {fields.map((field) => {
+                    if (!is_displaying_metadata_column && metadataColumnList.includes(field.field_code)) {
+                      return null; // skip rendering this column
+                    }
+
+                    return (
+                      <td
+                        key={field.field_code}
+                        className="px-2 py-2 border border-gray-100 text-gray-600"
+                        style={{
+                          minWidth: `${field.field_name.length * 10 + 40}px`,
+                        }}
+                      >
+                        {String(row[field.field_code]?.value ?? "")}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })
+          ) : (
+            <tr>
               <td
-                key={field.field_code}
-                className="px-2 py-2 border border-gray-100 text-gray-600"
-                style={{
-                  minWidth: `${field.field_name.length * 10 + 40}px`, // match header width
-                }}
+                colSpan={fields.length}
+                className="text-center text-gray-400 py-4"
               >
-                {/* Placeholder */} example
+                No data available
               </td>
-            ))}
-          </tr>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
   );
 };
 
-
 export default function DynamicPage() {
   const params = useParams<RouteParams>();
   const { tenantCode, productCode, objectCode, viewContentCode } = params;
 
-  const [responseData, setResponseData] = useState<any>(null); // You can define a more specific type if you know the shape
+  const [responseLayout, setResponseLayout] = useState<any>(null);
+  const [responseData, setResponseData] = useState<any>(null);
   const [viewContent, setViewContent] = useState<any>(null);
   const [viewLayout, setViewLayout] = useState<any>(null);
 
   const [isAPIResponseAccordionOpen, setIsAPIResponseAccordionOpen] = useState(false);
+  const [isAPIResponseDataAccordionOpen, setIsAPIResponseDataAccordionOpen] = useState(false);
   const [isDynamicParamAccordionOpen, setIsDynamicParamAccordionOpen] = useState(false);
 
   useEffect(() => {
-    const sendRequest = async () => {
+    const fetchLayout = async () => {
       try {
         const response = await fetch(
           `http://localhost:8080/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/record`,
@@ -81,26 +126,71 @@ export default function DynamicPage() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({}), // Add any payload here if needed
+            body: JSON.stringify({}),
           }
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch");
+          throw new Error("Failed to fetch layout");
         }
 
         const data = await response.json();
-        setResponseData(data.data);
-        setViewContent(data.data.view_content);
-        setViewLayout(data.data.layout);
+        const layoutData = data.data;
+        setResponseLayout(layoutData);
+        setViewContent(layoutData.view_content);
+        setViewLayout(layoutData.layout);
+
+        // Setelah layout selesai, baru fetch data
+        await fetchData(layoutData);
       } catch (error) {
-        console.error("API error:", error);
+        console.error("Layout API error:", error);
+        setResponseLayout({ error: (error as Error).message });
+      }
+    };
+
+    const fetchData = async (layoutData: any) => {
+      try {
+        const dataResponse = await fetch(
+          `http://localhost:8080/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/data`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              fields: layoutData.layout?.children?.[0]?.props?.fields?.reduce((acc: any, field: any) => {
+                acc[field.field_code] = field;
+                return acc;
+              }, {}) || {},
+              filters: [],
+              orders: [
+                { field_name: "created_at", direction: "DESC" },
+                { field_name: "name", direction: "ASC" }
+              ],
+              page: 1,
+              page_size: 20,
+              object_code: objectCode,
+              tenant_code: tenantCode,
+              product_code: productCode,
+              view_content_code: viewContentCode,
+            })
+          }
+        );
+
+        if (!dataResponse.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        const data = await dataResponse.json();
+        setResponseData(data.data);
+      } catch (error) {
+        console.error("Data API error:", error);
         setResponseData({ error: (error as Error).message });
       }
     };
 
     if (tenantCode && productCode && objectCode && viewContentCode) {
-      sendRequest();
+      fetchLayout();
     }
   }, [tenantCode, productCode, objectCode, viewContentCode]);
 
@@ -108,15 +198,15 @@ export default function DynamicPage() {
     type: string;
     class_name?: string;
     props?: {
-      fields?: any[]; // you can define a stricter type if needed
+      fields?: any[];
+      is_displaying_metadata_column?: Boolean;
     };
   };
-
 
   return (
     <div className="flex flex-col items-left justify-left min-h-screen bg-gray-100">
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-cyan-600 mb-3">
+        <h1 className="text-2xl font-bold text-cyan-600 mb-3">
           {viewContent?.object?.display_name ? viewContent?.object?.display_name : toLabel(objectCode)}
         </h1>
 
@@ -125,8 +215,12 @@ export default function DynamicPage() {
             if (child.type === "table") {
               return (
                 <Card key={index} className="shadow-md">
-                  <CardContent className="p-2 pb-8 overflow-x-auto">
-                    <DynamicTable fields={child.props?.fields || []} />
+                  <CardContent className="p-0 pb-0 overflow-x-auto">
+                    <DynamicTable
+                      fields={child.props?.fields || []}
+                      rows={responseData?.items || []}
+                      is_displaying_metadata_column={child.props?.is_displaying_metadata_column}
+                    />
                   </CardContent>
                 </Card>
               );
@@ -178,6 +272,32 @@ export default function DynamicPage() {
           </button>
 
           {isAPIResponseAccordionOpen && (
+            <SyntaxHighlighter
+              language="json"
+              style={vscDarkPlus}
+              showLineNumbers
+              wrapLines
+              customStyle={{
+                borderRadius: '0.5rem',
+                padding: '1rem',
+                fontSize: '0.875rem',
+                backgroundColor: '#1e1e1e'
+              }}
+            >
+              {JSON.stringify(responseLayout, null, 2)}
+            </SyntaxHighlighter>
+          )}
+        </div>
+        <div className="mt-4">
+          <button
+            onClick={() => setIsAPIResponseDataAccordionOpen(!isAPIResponseDataAccordionOpen)}
+            className="w-full flex justify-between items-center text-left bg-indigo-100 px-4 py-2 rounded-lg font-semibold text-gray-800 hover:bg-indigo-200 transition"
+          >
+            <span>Data API Response</span>
+            <span>{isAPIResponseDataAccordionOpen ? "−" : "+"}</span>
+          </button>
+
+          {isAPIResponseDataAccordionOpen && (
             <SyntaxHighlighter
               language="json"
               style={vscDarkPlus}
