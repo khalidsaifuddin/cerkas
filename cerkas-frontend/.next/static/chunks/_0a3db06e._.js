@@ -151,6 +151,7 @@ __turbopack_context__.s({
     "default": (()=>DynamicPage)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$app$2f$appConfig$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/app/appConfig.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/components/ui/card.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/utils.ts [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-client] (ecmascript)");
@@ -160,6 +161,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$react$2d$syn
 ;
 var _s = __turbopack_context__.k.signature();
 "use client";
+;
 ;
 ;
 ;
@@ -176,94 +178,137 @@ const metadataColumnList = [
     "serial",
     "id"
 ];
-const DynamicTable = ({ fields, rows = [], is_displaying_metadata_column })=>{
+const DynamicTable = ({ fields, rows = [], is_displaying_metadata_column, currentPage = 1, totalPages = 1, onPageChange })=>{
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "overflow-x-auto",
-        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
-            className: "table-auto border border-gray-100 whitespace-nowrap",
-            children: [
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
-                    children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
-                        className: "bg-gray-100",
-                        children: fields.map((field)=>{
-                            if (!is_displaying_metadata_column && metadataColumnList.includes(field.field_code)) {
-                                return null; // skip rendering this column
-                            }
-                            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
-                                className: "px-2 py-2 border border-gray-100 text-left",
-                                style: {
-                                    minWidth: `${field.field_name.length * 10 + 40}px`
-                                },
-                                children: field.field_name
-                            }, field.field_code, false, {
-                                fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                lineNumber: 52,
-                                columnNumber: 17
-                            }, this);
-                        })
-                    }, void 0, false, {
-                        fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                        lineNumber: 45,
-                        columnNumber: 11
-                    }, this)
-                }, void 0, false, {
-                    fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 44,
-                    columnNumber: 9
-                }, this),
-                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
-                    children: rows.length > 0 ? rows.map((row, rowIndex)=>{
-                        return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("table", {
+                className: "table-auto border border-gray-100 whitespace-nowrap",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("thead", {
+                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                            className: "bg-gray-100",
                             children: fields.map((field)=>{
                                 if (!is_displaying_metadata_column && metadataColumnList.includes(field.field_code)) {
                                     return null; // skip rendering this column
                                 }
-                                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
-                                    className: "px-2 py-2 border border-gray-100 text-gray-600",
+                                return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("th", {
+                                    className: "px-2 py-2 border border-gray-100 text-left",
                                     style: {
                                         minWidth: `${field.field_name.length * 10 + 40}px`
                                     },
-                                    children: String(row[field.field_code]?.value ?? "")
+                                    children: field.field_name
                                 }, field.field_code, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 76,
-                                    columnNumber: 23
+                                    lineNumber: 56,
+                                    columnNumber: 17
                                 }, this);
                             })
-                        }, rowIndex, false, {
-                            fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 69,
-                            columnNumber: 17
-                        }, this);
-                    }) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
-                        children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
-                            colSpan: fields.length,
-                            className: "text-center text-gray-400 py-4",
-                            children: "No data available"
                         }, void 0, false, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 92,
-                            columnNumber: 15
+                            lineNumber: 49,
+                            columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                        lineNumber: 91,
-                        columnNumber: 13
+                        lineNumber: 48,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tbody", {
+                        children: rows.length > 0 ? rows.map((row, rowIndex)=>{
+                            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                                children: fields.map((field)=>{
+                                    if (!is_displaying_metadata_column && metadataColumnList.includes(field.field_code)) {
+                                        return null; // skip rendering this column
+                                    }
+                                    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
+                                        className: "px-2 py-2 border border-gray-100 text-gray-600",
+                                        style: {
+                                            minWidth: `${field.field_name.length * 10 + 40}px`
+                                        },
+                                        children: String(row[field.field_code]?.value ?? "")
+                                    }, field.field_code, false, {
+                                        fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                                        lineNumber: 80,
+                                        columnNumber: 23
+                                    }, this);
+                                })
+                            }, rowIndex, false, {
+                                fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                                lineNumber: 73,
+                                columnNumber: 17
+                            }, this);
+                        }) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("tr", {
+                            children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("td", {
+                                colSpan: fields.length,
+                                className: "text-center text-gray-400 py-4",
+                                children: "No data available"
+                            }, void 0, false, {
+                                fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                                lineNumber: 96,
+                                columnNumber: 15
+                            }, this)
+                        }, void 0, false, {
+                            fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                            lineNumber: 95,
+                            columnNumber: 13
+                        }, this)
+                    }, void 0, false, {
+                        fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                        lineNumber: 69,
+                        columnNumber: 9
                     }, this)
-                }, void 0, false, {
-                    fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 65,
-                    columnNumber: 9
-                }, this)
-            ]
-        }, void 0, true, {
-            fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-            lineNumber: 43,
-            columnNumber: 7
-        }, this)
-    }, void 0, false, {
+                ]
+            }, void 0, true, {
+                fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                lineNumber: 47,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "flex justify-left mt-4 space-x-2 ml-4",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        disabled: currentPage === 1,
+                        onClick: ()=>onPageChange(currentPage - 1),
+                        className: "px-3 py-1 border rounded disabled:opacity-50",
+                        children: "Prev"
+                    }, void 0, false, {
+                        fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                        lineNumber: 109,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                        className: "px-3 py-1",
+                        children: [
+                            currentPage,
+                            " / ",
+                            totalPages
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                        lineNumber: 116,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        disabled: currentPage === totalPages,
+                        onClick: ()=>onPageChange(currentPage + 1),
+                        className: "px-3 py-1 border rounded disabled:opacity-50",
+                        children: "Next"
+                    }, void 0, false, {
+                        fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                        lineNumber: 117,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
+                lineNumber: 108,
+                columnNumber: 7
+            }, this)
+        ]
+    }, void 0, true, {
         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-        lineNumber: 42,
+        lineNumber: 46,
         columnNumber: 5
     }, this);
 };
@@ -279,83 +324,74 @@ function DynamicPage() {
     const [isAPIResponseAccordionOpen, setIsAPIResponseAccordionOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [isAPIResponseDataAccordionOpen, setIsAPIResponseDataAccordionOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
     const [isDynamicParamAccordionOpen, setIsDynamicParamAccordionOpen] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [currentPage, setCurrentPage] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
+    const [totalPages, setTotalPages] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(1);
+    const fetchLayout = async ()=>{
+        try {
+            const response = await fetch(`${__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$appConfig$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["dashboardConfig"].backendAPIURL}/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/record`, {
+                method: __TURBOPACK__imported__module__$5b$project$5d2f$app$2f$appConfig$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APIMethod"].POST,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({})
+            });
+            if (!response.ok) {
+                throw new Error("Failed to fetch layout");
+            }
+            const data = await response.json();
+            const layoutData = data.data;
+            setResponseLayout(layoutData);
+            setViewContent(layoutData.view_content);
+            setViewLayout(layoutData.layout);
+            // setup dynamic page title based on object and tenant
+            document.title = `${layoutData.view_content.object.display_name ? layoutData.view_content.object.display_name : (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toLabel"])(objectCode)} (${layoutData.view_content.name}) - ${layoutData.view_content.tenant.name}`;
+            // Setelah layout selesai, baru fetch data
+            await fetchData(layoutData);
+        } catch (error) {
+            console.error("Layout API error:", error);
+            setResponseLayout({
+                error: error.message
+            });
+        }
+    };
+    const fetchData = async (layoutData)=>{
+        try {
+            const dataResponse = await fetch(`${__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$appConfig$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["dashboardConfig"].backendAPIURL}/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/data`, {
+                method: __TURBOPACK__imported__module__$5b$project$5d2f$app$2f$appConfig$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["APIMethod"].POST,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    fields: layoutData.layout?.children?.[0]?.props?.fields?.reduce((acc, field)=>{
+                        acc[field.field_code] = field;
+                        return acc;
+                    }, {}) || {},
+                    filters: [],
+                    orders: [],
+                    page: currentPage,
+                    page_size: 20,
+                    object_code: objectCode,
+                    tenant_code: tenantCode,
+                    product_code: productCode,
+                    view_content_code: viewContentCode
+                })
+            });
+            if (!dataResponse.ok) {
+                throw new Error("Failed to fetch data");
+            }
+            const data = await dataResponse.json();
+            setResponseData(data.data);
+            setCurrentPage(data.page);
+            setTotalPages(data.total_page);
+        } catch (error) {
+            console.error("Data API error:", error);
+            setResponseData({
+                error: error.message
+            });
+        }
+    };
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "DynamicPage.useEffect": ()=>{
-            const fetchLayout = {
-                "DynamicPage.useEffect.fetchLayout": async ()=>{
-                    try {
-                        const response = await fetch(`http://localhost:8080/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/record`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({})
-                        });
-                        if (!response.ok) {
-                            throw new Error("Failed to fetch layout");
-                        }
-                        const data = await response.json();
-                        const layoutData = data.data;
-                        setResponseLayout(layoutData);
-                        setViewContent(layoutData.view_content);
-                        setViewLayout(layoutData.layout);
-                        // Setelah layout selesai, baru fetch data
-                        await fetchData(layoutData);
-                    } catch (error) {
-                        console.error("Layout API error:", error);
-                        setResponseLayout({
-                            error: error.message
-                        });
-                    }
-                }
-            }["DynamicPage.useEffect.fetchLayout"];
-            const fetchData = {
-                "DynamicPage.useEffect.fetchData": async (layoutData)=>{
-                    try {
-                        const dataResponse = await fetch(`http://localhost:8080/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/data`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({
-                                fields: layoutData.layout?.children?.[0]?.props?.fields?.reduce({
-                                    "DynamicPage.useEffect.fetchData": (acc, field)=>{
-                                        acc[field.field_code] = field;
-                                        return acc;
-                                    }
-                                }["DynamicPage.useEffect.fetchData"], {}) || {},
-                                filters: [],
-                                orders: [
-                                    {
-                                        field_name: "created_at",
-                                        direction: "DESC"
-                                    },
-                                    {
-                                        field_name: "name",
-                                        direction: "ASC"
-                                    }
-                                ],
-                                page: 1,
-                                page_size: 20,
-                                object_code: objectCode,
-                                tenant_code: tenantCode,
-                                product_code: productCode,
-                                view_content_code: viewContentCode
-                            })
-                        });
-                        if (!dataResponse.ok) {
-                            throw new Error("Failed to fetch data");
-                        }
-                        const data = await dataResponse.json();
-                        setResponseData(data.data);
-                    } catch (error) {
-                        console.error("Data API error:", error);
-                        setResponseData({
-                            error: error.message
-                        });
-                    }
-                }
-            }["DynamicPage.useEffect.fetchData"];
             if (tenantCode && productCode && objectCode && viewContentCode) {
                 fetchLayout();
             }
@@ -376,7 +412,7 @@ function DynamicPage() {
                     children: viewContent?.object?.display_name ? viewContent?.object?.display_name : (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$utils$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["toLabel"])(objectCode)
                 }, void 0, false, {
                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 209,
+                    lineNumber: 237,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -390,20 +426,26 @@ function DynamicPage() {
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(DynamicTable, {
                                         fields: child.props?.fields || [],
                                         rows: responseData?.items || [],
-                                        is_displaying_metadata_column: child.props?.is_displaying_metadata_column
+                                        is_displaying_metadata_column: child.props?.is_displaying_metadata_column,
+                                        currentPage: currentPage,
+                                        totalPages: totalPages,
+                                        onPageChange: async (newPage)=>{
+                                            setCurrentPage(newPage);
+                                            await fetchData(responseLayout);
+                                        }
                                     }, void 0, false, {
                                         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                        lineNumber: 219,
+                                        lineNumber: 247,
                                         columnNumber: 21
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 218,
+                                    lineNumber: 246,
                                     columnNumber: 19
                                 }, this)
                             }, index, false, {
                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                lineNumber: 217,
+                                lineNumber: 245,
                                 columnNumber: 17
                             }, this);
                         }
@@ -411,7 +453,7 @@ function DynamicPage() {
                     })
                 }, void 0, false, {
                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 213,
+                    lineNumber: 241,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -425,20 +467,20 @@ function DynamicPage() {
                                     children: "Dynamic Param"
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 237,
+                                    lineNumber: 271,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                     children: isDynamicParamAccordionOpen ? "−" : "+"
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 238,
+                                    lineNumber: 272,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 233,
+                            lineNumber: 267,
                             columnNumber: 11
                         }, this),
                         isDynamicParamAccordionOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("pre", {
@@ -453,7 +495,7 @@ function DynamicPage() {
                                                 children: "Tenant Code:"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 245,
+                                                lineNumber: 279,
                                                 columnNumber: 19
                                             }, this),
                                             " ",
@@ -462,13 +504,13 @@ function DynamicPage() {
                                                 children: tenantCode
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 246,
+                                                lineNumber: 280,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                        lineNumber: 244,
+                                        lineNumber: 278,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -478,7 +520,7 @@ function DynamicPage() {
                                                 children: "Product Code:"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 249,
+                                                lineNumber: 283,
                                                 columnNumber: 19
                                             }, this),
                                             " ",
@@ -487,13 +529,13 @@ function DynamicPage() {
                                                 children: productCode
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 250,
+                                                lineNumber: 284,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                        lineNumber: 248,
+                                        lineNumber: 282,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -503,7 +545,7 @@ function DynamicPage() {
                                                 children: "Object Code:"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 253,
+                                                lineNumber: 287,
                                                 columnNumber: 19
                                             }, this),
                                             " ",
@@ -512,13 +554,13 @@ function DynamicPage() {
                                                 children: objectCode
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 254,
+                                                lineNumber: 288,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                        lineNumber: 252,
+                                        lineNumber: 286,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -528,7 +570,7 @@ function DynamicPage() {
                                                 children: "View Content Code:"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 257,
+                                                lineNumber: 291,
                                                 columnNumber: 19
                                             }, this),
                                             " ",
@@ -537,30 +579,30 @@ function DynamicPage() {
                                                 children: viewContentCode
                                             }, void 0, false, {
                                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                                lineNumber: 258,
+                                                lineNumber: 292,
                                                 columnNumber: 19
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                        lineNumber: 256,
+                                        lineNumber: 290,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                lineNumber: 243,
+                                lineNumber: 277,
                                 columnNumber: 15
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 242,
+                            lineNumber: 276,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 232,
+                    lineNumber: 266,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -574,20 +616,20 @@ function DynamicPage() {
                                     children: "Layout API Response"
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 270,
+                                    lineNumber: 304,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                     children: isAPIResponseAccordionOpen ? "−" : "+"
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 271,
+                                    lineNumber: 305,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 266,
+                            lineNumber: 300,
                             columnNumber: 11
                         }, this),
                         isAPIResponseAccordionOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$react$2d$syntax$2d$highlighter$2f$dist$2f$esm$2f$prism$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Prism$3e$__["Prism"], {
@@ -604,13 +646,13 @@ function DynamicPage() {
                             children: JSON.stringify(responseLayout, null, 2)
                         }, void 0, false, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 275,
+                            lineNumber: 309,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 265,
+                    lineNumber: 299,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -624,20 +666,20 @@ function DynamicPage() {
                                     children: "Data API Response"
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 296,
+                                    lineNumber: 330,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                     children: isAPIResponseDataAccordionOpen ? "−" : "+"
                                 }, void 0, false, {
                                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                                    lineNumber: 297,
+                                    lineNumber: 331,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 292,
+                            lineNumber: 326,
                             columnNumber: 11
                         }, this),
                         isAPIResponseDataAccordionOpen && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$react$2d$syntax$2d$highlighter$2f$dist$2f$esm$2f$prism$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Prism$3e$__["Prism"], {
@@ -654,28 +696,28 @@ function DynamicPage() {
                             children: JSON.stringify(responseData, null, 2)
                         }, void 0, false, {
                             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                            lineNumber: 301,
+                            lineNumber: 335,
                             columnNumber: 13
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-                    lineNumber: 291,
+                    lineNumber: 325,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-            lineNumber: 208,
+            lineNumber: 236,
             columnNumber: 7
         }, this)
     }, void 0, false, {
         fileName: "[project]/app/[tenantCode]/[productCode]/[objectCode]/[viewContentCode]/page.tsx",
-        lineNumber: 207,
+        lineNumber: 235,
         columnNumber: 5
     }, this);
 }
-_s(DynamicPage, "IJrJyzXOQQODBH5ORBgfBWdgyL4=", false, function() {
+_s(DynamicPage, "iuJ/BFMS3PP/G34jqG+S8/opA5w=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useParams"]
     ];

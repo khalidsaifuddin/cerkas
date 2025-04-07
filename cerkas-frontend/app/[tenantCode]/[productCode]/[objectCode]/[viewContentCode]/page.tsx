@@ -1,5 +1,6 @@
 "use client";
 
+import { APIMethod, dashboardConfig } from "@/app/appConfig";
 import { Card, CardContent } from "@/components/ui/card";
 import { toLabel } from "@/lib/utils";
 import { useParams } from "next/navigation";
@@ -35,9 +36,12 @@ interface DynamicTableProps {
   fields: Field[];
   rows?: Record<string, any>[];
   is_displaying_metadata_column?: Boolean;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange: (page: number) => void;
 }
 
-const DynamicTable = ({ fields, rows = [], is_displaying_metadata_column }: DynamicTableProps) => {
+const DynamicTable = ({ fields, rows = [], is_displaying_metadata_column, currentPage = 1, totalPages = 1, onPageChange }: DynamicTableProps) => {
   return (
     <div className="overflow-x-auto">
       <table className="table-auto border border-gray-100 whitespace-nowrap">
@@ -99,6 +103,25 @@ const DynamicTable = ({ fields, rows = [], is_displaying_metadata_column }: Dyna
           )}
         </tbody>
       </table>
+
+      {/* Pagination UI */}
+      <div className="flex justify-left mt-4 space-x-2 ml-4">
+        <button
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+        <span className="px-3 py-1">{currentPage} / {totalPages}</span>
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
@@ -116,79 +139,84 @@ export default function DynamicPage() {
   const [isAPIResponseDataAccordionOpen, setIsAPIResponseDataAccordionOpen] = useState(false);
   const [isDynamicParamAccordionOpen, setIsDynamicParamAccordionOpen] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1)
+
+  const fetchLayout = async () => {
+    try {
+      const response = await fetch(
+        `${dashboardConfig.backendAPIURL}/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/record`,
+        {
+          method: APIMethod.POST,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch layout");
+      }
+
+      const data = await response.json();
+      const layoutData = data.data;
+      setResponseLayout(layoutData);
+      setViewContent(layoutData.view_content);
+      setViewLayout(layoutData.layout);
+
+      // setup dynamic page title based on object and tenant
+      document.title = `${layoutData.view_content.object.display_name ? layoutData.view_content.object.display_name : toLabel(objectCode)} (${layoutData.view_content.name}) - ${layoutData.view_content.tenant.name}`;
+
+      // Setelah layout selesai, baru fetch data
+      await fetchData(layoutData);
+    } catch (error) {
+      console.error("Layout API error:", error);
+      setResponseLayout({ error: (error as Error).message });
+    }
+  };
+
+  const fetchData = async (layoutData: any) => {
+    try {
+      const dataResponse = await fetch(
+        `${dashboardConfig.backendAPIURL}/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/data`,
+        {
+          method: APIMethod.POST,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fields: layoutData.layout?.children?.[0]?.props?.fields?.reduce((acc: any, field: any) => {
+              acc[field.field_code] = field;
+              return acc;
+            }, {}) || {},
+            filters: [],
+            orders: [],
+            page: currentPage,
+            page_size: 20,
+            object_code: objectCode,
+            tenant_code: tenantCode,
+            product_code: productCode,
+            view_content_code: viewContentCode,
+          })
+        }
+      );
+
+      if (!dataResponse.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const data = await dataResponse.json();
+      setResponseData(data.data);
+      setCurrentPage(data.page);
+      setTotalPages(data.total_page);
+    } catch (error) {
+      console.error("Data API error:", error);
+      setResponseData({ error: (error as Error).message });
+    }
+  };
+
   useEffect(() => {
-    const fetchLayout = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:8080/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/record`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({}),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch layout");
-        }
-
-        const data = await response.json();
-        const layoutData = data.data;
-        setResponseLayout(layoutData);
-        setViewContent(layoutData.view_content);
-        setViewLayout(layoutData.layout);
-
-        // Setelah layout selesai, baru fetch data
-        await fetchData(layoutData);
-      } catch (error) {
-        console.error("Layout API error:", error);
-        setResponseLayout({ error: (error as Error).message });
-      }
-    };
-
-    const fetchData = async (layoutData: any) => {
-      try {
-        const dataResponse = await fetch(
-          `http://localhost:8080/t/${tenantCode}/p/${productCode}/o/${objectCode}/view/${viewContentCode}/data`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              fields: layoutData.layout?.children?.[0]?.props?.fields?.reduce((acc: any, field: any) => {
-                acc[field.field_code] = field;
-                return acc;
-              }, {}) || {},
-              filters: [],
-              orders: [
-                { field_name: "created_at", direction: "DESC" },
-                { field_name: "name", direction: "ASC" }
-              ],
-              page: 1,
-              page_size: 20,
-              object_code: objectCode,
-              tenant_code: tenantCode,
-              product_code: productCode,
-              view_content_code: viewContentCode,
-            })
-          }
-        );
-
-        if (!dataResponse.ok) {
-          throw new Error("Failed to fetch data");
-        }
-
-        const data = await dataResponse.json();
-        setResponseData(data.data);
-      } catch (error) {
-        console.error("Data API error:", error);
-        setResponseData({ error: (error as Error).message });
-      }
-    };
-
     if (tenantCode && productCode && objectCode && viewContentCode) {
       fetchLayout();
     }
@@ -220,6 +248,12 @@ export default function DynamicPage() {
                       fields={child.props?.fields || []}
                       rows={responseData?.items || []}
                       is_displaying_metadata_column={child.props?.is_displaying_metadata_column}
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={async (newPage) => {
+                        setCurrentPage(newPage);
+                        await fetchData(responseLayout);
+                      }}
                     />
                   </CardContent>
                 </Card>

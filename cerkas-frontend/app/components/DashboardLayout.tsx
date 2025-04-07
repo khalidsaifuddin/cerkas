@@ -31,20 +31,7 @@ const menuItems = [
         href: "/fetchly/delivery/user_address/default",
       },
     ],
-  },
-  {
-    label: "Dynamic Page 2",
-    children: [
-      {
-        label: "User",
-        href: "/fetchly/delivery/user/default",
-      },
-      {
-        label: "Driver",
-        href: "/fetchly/delivery/driver/default",
-      },
-    ],
-  },
+  }
 ];
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
