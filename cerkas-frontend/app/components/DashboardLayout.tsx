@@ -27,8 +27,8 @@ const menuItems = [
         href: "/fetchly/delivery/user/default",
       },
       {
-        label: "Driver",
-        href: "/fetchly/delivery/driver/default",
+        label: "User Address",
+        href: "/fetchly/delivery/user_address/default",
       },
     ],
   },
@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <div>
                 <button
                   onClick={() => toggleExpand(item.label)}
-                  className={`w-full flex items-center justify-between p-2 pl-3 hover:bg-teal-600 transition-colors ${isSidebarOpen ? "text-left" : "text-center"
+                  className={`w-full flex items-center justify-between p-2 pl-3 hover:bg-amber-600 transition-colors ${isSidebarOpen ? "text-left" : "text-center"
                     }`}
                 >
                   <span>{isSidebarOpen ? item.label : item.label.charAt(0)}</span>
@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       <li key={child.label}>
                         <Link
                           href={child.href}
-                          className="block p-2 pl-3 text-sm hover:bg-teal-600 transition-colors"
+                          className="block p-2 pl-3 text-sm hover:bg-amber-600 transition-colors"
                         >
                           {child.label}
                         </Link>
@@ -95,7 +95,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             ) : (
               <Link
                 href={item.href}
-                className={`block p-2 pl-3 hover:bg-teal-600 transition-colors ${isSidebarOpen ? "text-left" : "text-center"
+                className={`block p-2 pl-3 hover:bg-amber-600 transition-colors ${isSidebarOpen ? "text-left" : "text-center"
                   }`}
               >
                 {isSidebarOpen ? item.label : item.label.charAt(0)}
@@ -111,16 +111,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <aside
-        className={`flex flex-col h-screen bg-gradient-to-b from-teal-900 to-teal-700 text-white shadow-lg transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-14"}`}
+        className={`flex flex-col h-screen bg-gradient-to-b from-amber-900 to-amber-700 text-white shadow-lg transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-14"}`}
       >
         {/* Header */}
-        <div className="p-2 pl-3 flex items-center justify-between border-b border-teal-600">
+        <div className="p-2 pl-3 flex items-center justify-between border-b border-amber-600">
           {isSidebarOpen && (
             <h2 className="text-2xl font-semibold tracking-wide">{dashboardConfig.title}</h2>
           )}
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg bg-teal-600 hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-400 transition-colors"
+            className="p-2 rounded-lg bg-amber-600 hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-colors"
           >
             {isSidebarOpen ? (
               <ChevronLeft className="w-4 h-4 text-white" />
@@ -138,14 +138,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* User Profile */}
-        <div className="mt-auto border-t border-teal-600 p-2 flex items-center gap-3">
+        <div className="mt-auto border-t border-amber-600 p-2 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
             U
           </div>
           {isSidebarOpen && (
             <div className="flex flex-col">
               <span className="text-sm font-medium">Username</span>
-              <span className="text-xs text-teal-200">user@email.com</span>
+              <span className="text-xs text-amber-200">user@email.com</span>
             </div>
           )}
         </div>
@@ -153,9 +153,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
 
       {/* Main Content */}
-      <main className="flex-1 bg-gray-50 h-screen flex flex-col">
+      <main className="flex-1 bg-gray-50 h-screen flex flex-col overflow-auto">
         {/* Optional fixed header inside main */}
-        {/* <div className="p-4 border-b bg-gradient-to-r from-teal-900 to-teal-700 text-white shadow z-10">
+        {/* <div className="p-4 border-b bg-gradient-to-r from-amber-900 to-amber-700 text-white shadow z-10">
           <h1 className="text-xl font-semibold">Page Title</h1>
         </div> */}
 
